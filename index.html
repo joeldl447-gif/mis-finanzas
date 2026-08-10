@@ -67,6 +67,14 @@ textarea{width:100%;min-height:78px;resize:vertical;padding:9px;border:1px solid
 .modal-box label{display:block}
 .modal-box input,.modal-box select{width:100%;text-align:left;margin-top:5px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.finance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.finance-card{border:1px solid #ddd;border-radius:10px;padding:10px;margin-top:8px}
+.finance-card h3{margin-bottom:6px}
+.finance-card label{display:block}
+.finance-card input{width:100%;text-align:right;margin-top:4px}
+.net-positive{color:#176b2c}
+.net-negative{color:#9a1f1f}
+body.dark .finance-card{border-color:#444}
 </style>
 </head>
 <body>
@@ -81,6 +89,7 @@ textarea{width:100%;min-height:78px;resize:vertical;padding:9px;border:1px solid
 <button onclick="togglePanel('budget')">Presupuestos</button>
 <button onclick="togglePanel('analytics')">Análisis</button>
 <button onclick="togglePanel('searchPanel')">Buscar</button>
+<button onclick="togglePanel('financePanel')">Plan financiero</button>
 <button onclick="toggleDark()" id="darkBtn">Modo oscuro</button>
 </div>
 
@@ -122,6 +131,39 @@ textarea{width:100%;min-height:78px;resize:vertical;padding:9px;border:1px solid
 <div id="historyList"></div>
 </section>
 
+<section class="panel" id="financePanel">
+<h2>Plan financiero</h2>
+<div class="small">Usalo para separar lo que realmente tenés disponible de lo que ya está comprometido.</div>
+<div class="finance-grid">
+<div class="finance-card"><h3>Cuenta del chino</h3>
+<label>Lo anotado actualmente<input type="number" id="chinoDebt" min="0" step="1" inputmode="numeric"></label>
+<label>Cobro quincenal<input type="number" id="chinoPay" min="0" step="1" inputmode="numeric"></label>
+<div class="small">Cobro estimado después del descuento</div><b id="chinoNet">$0</b>
+</div>
+<div class="finance-card"><h3>Gastos fijos</h3>
+<label>Internet<input type="number" id="fixedInternet" min="0" step="1"></label>
+<label>Seguro<input type="number" id="fixedInsurance" min="0" step="1"></label>
+<label>Medicamentos<input type="number" id="fixedMeds" min="0" step="1"></label>
+<div class="small">Total mensual</div><b id="fixedTotal">$0</b>
+</div>
+<div class="finance-card"><h3>Reserva por quincena</h3>
+<div class="small">Mitad de tus gastos fijos mensuales</div><b id="fixedHalf">$0</b>
+</div>
+<div class="finance-card"><h3>Después del chino</h3>
+<label>Fondo reservado<input type="number" id="postChinoFund" min="0" step="1"></label>
+<label>Meta de fondo<input type="number" id="postChinoGoal" min="0" step="1"></label>
+<div class="small">Progreso</div><b id="postChinoProgress">$0 / $0</b>
+</div>
+<div class="finance-card"><h3>Ingreso base futuro</h3>
+<label>Dietética mensual estimada<input type="number" id="dietMonthly" min="0" step="1"></label>
+<label>Uber mensual objetivo<input type="number" id="uberMonthly" min="0" step="1"></label>
+<div class="small">Ingreso combinado estimado</div><b id="futureIncome">$0</b>
+</div>
+</div>
+<div class="balance" id="financeAvailable">Disponible después de cuenta del chino y reserva: $0</div>
+<div class="actions"><button onclick="saveFinance()" class="primary">Guardar plan</button><button onclick="resetFinance()">Restablecer valores</button></div>
+</section>
+
 <div class="panel" id="recurring">
 <h2>Gastos recurrentes</h2>
 <div class="small">Los gastos recurrentes se pueden aplicar al crear un nuevo período.</div>
@@ -153,6 +195,7 @@ const labels={diet:'Dietética',extras:'Extras',comida:'Comida',transporte:'Tran
 let state=JSON.parse(localStorage.getItem('fin_state_v3')||'null');
 let budgets=JSON.parse(localStorage.getItem('fin_budgets_v5')||'{}');
 let recurring=JSON.parse(localStorage.getItem('fin_recurring_v5')||'[]');
+let finance=JSON.parse(localStorage.getItem('fin_finance_v1')||'null')||{chinoDebt:0,chinoPay:250000,fixedInternet:40000,fixedInsurance:19000,fixedMeds:15000,postChinoFund:0,postChinoGoal:500000,dietMonthly:520000,uberMonthly:0};
 
 function money(n){return '$'+Math.round(n||0).toLocaleString('es-AR')}
 function addDays(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
@@ -162,7 +205,7 @@ function key(p,c,i){return 'fin3_'+p.id+'_'+c+i}
 function descKey(p,c,i){return 'fin5_desc_'+p.id+'_'+c+i}
 function noteKey(p,i){return 'fin3_'+p.id+'_note'+i}
 function periodTotal(p){let inc=0,g=0;for(let i=0;i<p.days;i++){for(const c of cats){let v=Number(localStorage.getItem(key(p,c,i)))||0;if(c==='diet'||c==='extras')inc+=v;else g+=v}}return {inc,g,balance:inc-g}}
-function save(){localStorage.setItem('fin_state_v3',JSON.stringify(state));localStorage.setItem('fin_budgets_v5',JSON.stringify(budgets));localStorage.setItem('fin_recurring_v5',JSON.stringify(recurring))}
+function save(){localStorage.setItem('fin_state_v3',JSON.stringify(state));localStorage.setItem('fin_budgets_v5',JSON.stringify(budgets));localStorage.setItem('fin_recurring_v5',JSON.stringify(recurring));localStorage.setItem('fin_finance_v1',JSON.stringify(finance))}
 function init(){
  if(!state){state={nextId:2,current:1,periods:[{id:1,start:'2026-08-11',days:15}]};save()}
  render()
@@ -179,9 +222,43 @@ function togglePanel(id){
  const p=document.getElementById(id);
  const show=p.style.display!=='block';
  document.querySelectorAll('.panel').forEach(x=>x.style.display='none');
- if(show){p.style.display='block';if(id==='summary')renderSummary();if(id==='budget')renderBudgets();if(id==='analytics')renderAnalytics();if(id==='history')renderHistory();if(id==='searchPanel')searchAll()}
+ if(show){p.style.display='block';if(id==='summary')renderSummary();if(id==='budget')renderBudgets();if(id==='analytics')renderAnalytics();if(id==='history')renderHistory();if(id==='searchPanel')searchAll();if(id==='financePanel')renderFinance()}
 }
 
+function renderFinance(){
+ const ids=['chinoDebt','chinoPay','fixedInternet','fixedInsurance','fixedMeds','postChinoFund','postChinoGoal','dietMonthly','uberMonthly'];
+ ids.forEach(id=>{const e=document.getElementById(id);if(e)e.value=finance[id]??0});
+ updateFinance();
+}
+function updateFinance(){
+ const debt=Number(document.getElementById('chinoDebt')?.value)||0;
+ const pay=Number(document.getElementById('chinoPay')?.value)||0;
+ const internet=Number(document.getElementById('fixedInternet')?.value)||0;
+ const insurance=Number(document.getElementById('fixedInsurance')?.value)||0;
+ const meds=Number(document.getElementById('fixedMeds')?.value)||0;
+ const fund=Number(document.getElementById('postChinoFund')?.value)||0;
+ const goal=Number(document.getElementById('postChinoGoal')?.value)||0;
+ const diet=Number(document.getElementById('dietMonthly')?.value)||0;
+ const uber=Number(document.getElementById('uberMonthly')?.value)||0;
+ const fixed=internet+insurance+meds;
+ document.getElementById('chinoNet').textContent=money(pay-debt);
+ document.getElementById('fixedTotal').textContent=money(fixed);
+ document.getElementById('fixedHalf').textContent=money(fixed/2);
+ document.getElementById('postChinoProgress').textContent=money(fund)+' / '+money(goal);
+ document.getElementById('futureIncome').textContent=money(diet+uber);
+ const available=pay-debt-fixed/2;
+ const av=document.getElementById('financeAvailable');
+ av.textContent='Disponible después de cuenta del chino y reserva: '+money(available);
+ av.className='balance '+(available<0?'net-negative':'net-positive');
+}
+function saveFinance(){
+ ['chinoDebt','chinoPay','fixedInternet','fixedInsurance','fixedMeds','postChinoFund','postChinoGoal','dietMonthly','uberMonthly'].forEach(id=>{finance[id]=Number(document.getElementById(id).value)||0});
+ save();updateFinance();alert('Plan financiero guardado.');
+}
+function resetFinance(){
+ finance={chinoDebt:0,chinoPay:250000,fixedInternet:40000,fixedInsurance:19000,fixedMeds:15000,postChinoFund:0,postChinoGoal:500000,dietMonthly:520000,uberMonthly:0};
+ save();renderFinance();
+}
 function render(){
  const p=state.periods.find(x=>x.id===state.current);if(!p)return;
  document.getElementById('periodTitle').textContent=day(p.start).replace(/^./,x=>x.toUpperCase())+' '+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+' · '+p.days+' días';
@@ -297,6 +374,7 @@ function saveRecurring(){
  if(!r.amount){alert('Ingresá un monto.');return}
  recurring.push(r);save();closeRecurring();alert('Gasto recurrente guardado. Se aplicará en los próximos períodos.')
 }
+document.addEventListener('input',e=>{if(e.target.closest('#financePanel'))updateFinance()});
 init();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 </script>
