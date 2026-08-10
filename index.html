@@ -23,7 +23,11 @@ h1{font-size:24px;margin:8px 0 3px}
 .top{display:flex;gap:8px;margin:8px 0;position:sticky;top:0;background:#f5f5f5;padding:8px 0;z-index:5}
 button{border:0;border-radius:9px;padding:10px 12px;font-size:14px;background:#ddd}
 .primary{background:#222;color:#fff}
-.day,.history{background:#fff;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 5px #0001}
+.day{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 5px #0001;flex:0 0 100%;scroll-snap-align:start;min-width:0}
+.day-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;gap:12px;padding:12px 0 18px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.day-carousel::-webkit-scrollbar{display:none}
+.history{background:#fff;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 5px #0001}
+.tab-panel{display:none}
 h2{font-size:19px;margin:0 0 12px}
 .section{border-top:1px solid #eee;padding-top:10px;margin-top:10px}
 h3{font-size:15px;margin:0 0 8px}
@@ -47,9 +51,9 @@ textarea{width:100%;min-height:82px;resize:vertical;padding:9px;border:1px solid
 .small{font-size:12px;color:#777;margin-top:8px}
 </style></head><body><main>
 <h1>Mis Finanzas</h1><div class="sub" id="periodTitle"></div>
-<div class="top"><button class="primary" onclick="openNew()">Nuevo período</button><button onclick="toggleHistory()">Historial</button><button onclick="toggleDark()" id="darkBtn">Modo oscuro</button></div>
-<div id="days"></div>
-<section class="summary"><h2>Total del período</h2>
+<div class="top"><button class="primary" onclick="openNew()">Nuevo período</button><button onclick="toggleHistory()">Historial</button><button onclick="toggleSummary()">Total período</button><button onclick="toggleDark()" id="darkBtn">Modo oscuro</button></div>
+<div id="days" class="day-carousel"></div><div class="small" style="text-align:center">Deslizá hacia los costados para cambiar de día.</div>
+<section class="summary tab-panel" id="summary"><h2>Total del período</h2>
 <div><span>Dietética</span><b id="sdiet">$0</b></div><div><span>Chino</span><b id="schino">$0</b></div><div><span>Extras</span><b id="sextras">$0</b></div><div><span>Ingresos totales</span><b id="sin">$0</b></div>
 <div><span>Comida</span><b id="scomida">$0</b></div><div><span>Transporte</span><b id="stransporte">$0</b></div><div><span>Internet</span><b id="sinternet">$0</b></div><div><span>Seguro</span><b id="sseguro">$0</b></div><div><span>Ocio</span><b id="socio">$0</b></div><div><span>Préstamos</span><b id="sprestamos">$0</b></div><div><span>Otros</span><b id="sotros">$0</b></div>
 <div><span>Gastos totales</span><b id="sgastos">$0</b></div><div style="border-top:1px solid #555;margin-top:6px;padding-top:9px"><span>Saldo final</span><b id="ssaldo">$0</b></div>
@@ -82,9 +86,10 @@ if(localStorage.getItem('fin_dark')==='1') document.body.classList.add('dark');
 if(document.body.classList.contains('dark')) document.getElementById('darkBtn').textContent='Modo claro';
 
 function render(){
+ document.getElementById('summary').style.display='none';
  let p=state.periods.find(x=>x.id===state.current);if(!p)return;
  document.getElementById('periodTitle').textContent=day(p.start).replace(/^./,x=>x.toUpperCase())+' '+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+' · '+p.days+' días';
- let box=document.getElementById('days');box.innerHTML='';
+ let box=document.getElementById('days');box.innerHTML='';box.scrollLeft=0;
  for(let i=0;i<p.days;i++){
    let d=addDays(p.start,i),s=document.createElement('section');s.className='day';
    s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2>'+
@@ -134,6 +139,11 @@ function toggleHistory(){
    x.innerHTML='<span>'+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+'<br><small>'+p.days+' días</small></span><span><button onclick="openPeriod('+p.id+')">'+(p.id===state.current?'Actual':'Abrir')+'</button> <button class="danger" onclick="deletePeriod('+p.id+')">Borrar</button></span>';
    l.appendChild(x)
  })
+}
+function toggleSummary(){
+ let s=document.getElementById('summary');
+ s.style.display=s.style.display==='none'||!s.style.display?'block':'none';
+ if(s.style.display==='block')s.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function openPeriod(id){state.current=id;save();document.getElementById('history').style.display='none';render();window.scrollTo(0,0)}
 function deletePeriod(id){
