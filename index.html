@@ -2,328 +2,248 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#222">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090d0b">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
 <title>Mis Finanzas</title>
 <style>
+:root{
+ --bg:#080c0a;--card:#111815;--card2:#151d19;--line:#28332e;
+ --text:#e7eee9;--muted:#8c9891;--green:#9be85c;--green2:#5b9d31;
+ --red:#ed6b6b;--yellow:#e7bd55;--shadow:0 8px 28px #0007;
+}
 *{box-sizing:border-box}
-body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0d1110;margin:0;color:#e8eee8;transition:.2s}
-body.dark{background:#0d1110;color:#e8eee8}
-body:not(.dark){background:#0d1110;color:#e8eee8}
-body .sub{color:#9ba59c}
-body .top{background:#0d1110}
-body button{background:#1b211f;color:#dfe7df;border:1px solid #303a35}
-body .primary{background:#202822;color:#b8ee76;border-color:#5f9342}
-body .day,body .panel,body .history,body .modal-box{background:#141a18;color:#e8eee8;box-shadow:0 2px 10px #0008;border:1px solid #27312d}
-body .section,body .history-item,.budget-row{border-color:#29332e}
-body input,body textarea,body select{background:#101513;color:#eef5ef;border-color:#303b35}
-body .balance{background:#142718;color:#b8ee76;border:1px solid #2d4d2d}
-body .small{color:#89958d}
-body .bar-bg{background:#252d29}
-body .search-result{background:#18201c}
-body h1{letter-spacing:-.5px}
-body h1:before{content:"◈";color:#78b84a;margin-right:8px;font-size:18px}
-body .top button{border-radius:8px}
-body .top button:first-child{background:#1f271f}
-body .day{position:relative;overflow:hidden}
-body .day:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#365d2e 0 35%,#71522f 35% 100%);opacity:.8}
-body .panel h2{color:#f0f5f0}
-body .total{color:#b8ee76}
-body .bar{background:#75b94a}
-body .over .bar{background:#b74d4d}
-body.dark .search-result{background:#222}
-main{max-width:560px;margin:auto;padding:14px}
-h1{font-size:24px;margin:8px 0 3px}
-h2{font-size:19px;margin:0 0 12px}
-h3{font-size:15px;margin:0 0 8px}
-.sub{color:#666;margin-bottom:10px}
-.top{display:flex;gap:6px;margin:8px 0;position:sticky;top:0;background:#f5f5f5;padding:8px 0;z-index:5;overflow-x:auto}
-button{border:0;border-radius:9px;padding:10px 11px;font-size:14px;background:#ddd;white-space:nowrap}
-.primary{background:#222;color:#fff}
-.day-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding:12px 0 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:760px;margin:auto;padding:22px 18px 42px}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.logo{font-size:27px;filter:saturate(.9)}
+h1{font-size:29px;line-height:1;margin:0;font-weight:700;letter-spacing:-.7px}
+.period{margin-top:7px;color:#9aa49f;font-size:16px}
+.hero{
+ background:linear-gradient(145deg,#121a16,#101613);
+ border:1px solid #2b3731;border-radius:25px;padding:24px 26px 20px;
+ box-shadow:var(--shadow);margin-bottom:20px
+}
+.hero-title{color:#8d9992;font-size:16px;margin-bottom:5px}
+.hero-balance{font-size:48px;line-height:1.1;font-weight:750;color:var(--green);letter-spacing:-1.5px}
+.hero-row{display:flex;justify-content:space-between;margin-top:20px;font-size:16px;color:#9ba59f}
+.income b{color:var(--green)} .expense b{color:var(--red)}
+.tabs{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding:0 0 17px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+ flex:0 0 auto;border:1px solid #303a36;background:#18201d;color:#d8dfdb;
+ border-radius:13px;padding:12px 18px;font-size:16px
+}
+.tab.active{border-color:#78b94c;color:var(--green);background:#142016}
+.content{position:relative}
+.day-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;scrollbar-width:none}
 .day-carousel::-webkit-scrollbar{display:none}
-.day{background:#141a18;border-radius:14px;padding:14px;box-shadow:0 2px 10px #0008;flex:0 0 100%;scroll-snap-align:start;min-width:0}
-.section{border-top:1px solid #eee;padding-top:10px;margin-top:10px}
-label{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
-input,select{width:130px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:16px;text-align:right}
-textarea{width:100%;min-height:78px;resize:vertical;padding:9px;border:1px solid #ccc;border-radius:8px;font:inherit;font-size:15px}
-.notes-label{display:block}
-.total{font-weight:600;margin-top:8px;text-align:right}
-.balance{margin-top:12px;padding:10px;border-radius:9px;background:#eef6ee;font-weight:700;text-align:center}
-.panel{display:none;background:#fff;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 1px 5px #0001}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.card{border:1px solid #ddd;border-radius:10px;padding:10px}
-.card b{display:block;font-size:18px;margin-top:3px}
-.budget-row{border-top:1px solid #eee;padding:10px 0}
-.budget-head{display:flex;justify-content:space-between;gap:8px}
-.bar-bg{height:10px;border-radius:10px;background:#ddd;overflow:hidden;margin:6px 0}
-.bar{height:100%;width:0;background:#222;border-radius:10px}
-.over .bar{background:#8b1e1e}
-.budget-edit{display:flex;gap:7px;align-items:center;margin-top:5px}
-.budget-edit input{width:120px}
-.search{display:flex;gap:7px}
-.search input{flex:1;width:auto;text-align:left}
-.search-result{padding:10px;border-radius:9px;background:#f5f5f5;margin-top:8px}
-.history-item{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #eee;padding:10px 0;gap:8px}
-.actions{display:flex;gap:8px;margin-top:12px}
-.actions button{flex:1}
-.danger{background:#f3dede;color:#8b1e1e}
-.small{font-size:12px;color:#777;margin-top:8px}
-.chart-row{display:grid;grid-template-columns:95px 1fr 75px;align-items:center;gap:7px;margin:8px 0}
-.chart-row .bar-bg{margin:0}
-.period-compare{border-top:1px solid #eee;padding:10px 0}
-.modal{display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:flex-end}
-.modal-box{background:#fff;width:100%;max-width:560px;margin:auto;padding:18px;border-radius:18px 18px 0 0;max-height:90vh;overflow:auto}
-.modal-box label{display:block}
-.modal-box input,.modal-box select{width:100%;text-align:left;margin-top:5px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.day{
+ flex:0 0 100%;scroll-snap-align:start;background:var(--card);
+ border:1px solid #29342f;border-radius:23px;padding:23px 25px;box-shadow:var(--shadow)
+}
+.day-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:17px;margin-bottom:16px}
+.day-head h2{margin:0;font-size:24px}
+.day-count{font-size:13px;color:#9ca6a1;border:1px solid #35403b;padding:6px 9px;border-radius:9px}
+.section-title{font-size:19px;font-weight:650;margin:15px 0 8px}
+.section-title.in{color:#cfe8c1}.section-title.out{color:#f0b2b2}
+.row{display:grid;grid-template-columns:1fr 145px;align-items:center;gap:12px;padding:7px 0}
+.row span{font-size:17px}
+input[type=number],.text-input{
+ width:100%;background:#0b100e;border:1px solid #34403a;color:#e9efeb;
+ border-radius:13px;padding:11px 12px;text-align:right;outline:none
+}
+input:focus,textarea:focus,select:focus{border-color:#6fa945;box-shadow:0 0 0 2px #6fa94522}
+.total{display:flex;justify-content:flex-end;border-top:1px solid var(--line);margin-top:8px;padding-top:12px;font-weight:650;font-size:17px}
+.total.green{color:var(--green)} .total.red{color:var(--red)}
+.desc{margin-top:5px}
+.desc input{text-align:left;font-size:14px}
+.notes{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.notes label{display:block;font-weight:650;margin-bottom:7px}
+textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;color:#e9efeb;border-radius:13px;padding:11px;resize:vertical}
+.day-balance{margin-top:15px;padding:12px 14px;background:#122116;border:1px solid #314b31;border-radius:13px;text-align:center;color:#a8b3ac}
+.day-balance b{color:var(--green);font-size:18px}
+.swipe{display:flex;justify-content:center;gap:5px;padding:12px}
+.dot{width:7px;height:7px;border-radius:50%;background:#35403b}.dot.active{background:var(--green);width:20px;border-radius:8px}
+.pixel-line{height:10px;margin:22px -25px -23px;border-radius:0 0 22px 22px;
+ background:repeating-linear-gradient(90deg,#273c20 0 12px,#3d6427 12px 24px,#1b2918 24px 35px);
+ opacity:.9
+}
+.panel{display:none;background:var(--card);border:1px solid #29342f;border-radius:23px;padding:20px;box-shadow:var(--shadow)}
+.panel.show{display:block}
+.panel h2{margin:0 0 15px;font-size:22px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card span{color:var(--muted);font-size:13px}.card b{display:block;font-size:21px;margin-top:4px}
+.progress{height:12px;background:#27302c;border-radius:10px;overflow:hidden}.progress i{display:block;height:100%;background:var(--green);border-radius:10px}
+.category{display:grid;grid-template-columns:34px 1fr 80px;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}
+.cat-icon{font-size:20px;text-align:center}.cat-name{font-weight:600}.cat-sub{font-size:12px;color:var(--muted);margin-top:3px}.cat-money{text-align:right}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:30;align-items:flex-end}
+.modal.show{display:flex}
+.modal-box{width:min(760px,100%);margin:auto;background:#111815;border:1px solid #303b35;border-radius:22px 22px 0 0;padding:20px}
+.modal-box label{display:block;color:#aab4ae;margin:12px 0}
+.modal-box input,.modal-box select{width:100%;text-align:left;background:#0b100e;color:#eee;border:1px solid #34403a;border-radius:12px;padding:11px;margin-top:5px}
+.actions{display:flex;gap:9px;margin-top:16px}.actions button{flex:1}
+.primary{background:#9be85c;color:#081006;border:0;border-radius:12px;padding:12px 15px;font-weight:700}
+.secondary{background:#27312d;color:#e7eee9;border:1px solid #3b4741;border-radius:12px;padding:12px 15px}
+.danger{background:#3a1c1c;color:#ffb1b1;border:1px solid #633333}
+.history-item{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:12px 0}
+.small{font-size:12px;color:var(--muted)}
+.search{display:flex;gap:8px}.search input{text-align:left}
+@media(max-width:520px){
+ .app{padding:18px 14px 35px}
+ h1{font-size:28px}.hero{padding:21px 22px;border-radius:23px}
+ .hero-balance{font-size:46px}.hero-row{font-size:15px}
+ .day{padding:20px 24px}.day-head h2{font-size:22px}
+ .row{grid-template-columns:1fr 128px}.row span{font-size:16px}
+ .tab{padding:11px 16px}
+}
 </style>
 </head>
 <body>
-<main>
-<h1>Mis Finanzas</h1>
-<div class="sub" id="periodTitle"></div>
+<div class="app">
+ <header class="header"><div class="logo">◇</div><div><h1>Mis Finanzas</h1><div class="period" id="period"></div></div></header>
 
-<section id="hero" style="background:#141a18;border:1px solid #27312d;border-radius:14px;padding:15px;margin:12px 0;box-shadow:0 2px 10px #0008">
-<div style="font-size:13px;color:#8f9b92">Saldo disponible del período</div>
-<div id="heroBalance" style="font-size:34px;font-weight:750;color:#b8ee76;margin-top:3px">$0</div>
-<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#9da89f">
-<span>Ingresos <b id="heroIncome" style="color:#b8ee76">$0</b></span>
-<span>Gastos <b id="heroExpense" style="color:#e47777">$0</b></span>
-</div>
-</section>
-<div class="top">
-<button class="primary" onclick="openNew()">Nuevo período</button>
-<button onclick="togglePanel('summary')">Resumen</button>
-<button onclick="togglePanel('history')">Historial</button>
-<button onclick="togglePanel('summary')">Total período</button>
-<button onclick="togglePanel('budget')">Presupuestos</button>
-<button onclick="togglePanel('analytics')">Análisis</button>
-<button onclick="togglePanel('searchPanel')">Buscar</button>
-<button onclick="toggleDark()" id="darkBtn">Modo oscuro</button>
-</div>
+ <section class="hero">
+   <div class="hero-title">Saldo disponible del período</div>
+   <div class="hero-balance" id="heroBalance">$0</div>
+   <div class="hero-row"><span class="income">Ingresos <b id="heroIncome">$0</b></span><span class="expense">Gastos <b id="heroExpense">$0</b></span></div>
+ </section>
 
-<div id="days" class="day-carousel"></div>
-<div class="small" style="text-align:center">Deslizá hacia los costados para cambiar de día.</div>
+ <nav class="tabs">
+   <button class="tab active" onclick="newPeriod()">Nuevo período</button>
+   <button class="tab" onclick="panel('summary')">Resumen</button>
+   <button class="tab" onclick="panel('history')">Historial</button>
+   <button class="tab" onclick="panel('total')">Total período</button>
+   <button class="tab" onclick="panel('budget')">Presupuesto</button>
+   <button class="tab" onclick="panel('analysis')">Análisis</button>
+   <button class="tab" onclick="panel('search')">Buscar</button>
+   <button class="tab" onclick="toggleDark()">☾</button>
+ </nav>
 
-<section class="panel" id="summary">
-<h2>Total del período</h2>
-<div class="summary-grid">
-<div class="card">Ingresos<b id="sin">$0</b></div>
-<div class="card">Gastos<b id="sgastos">$0</b></div>
-<div class="card">Saldo<b id="ssaldo">$0</b></div>
-<div class="card">Promedio diario<b id="savg">$0</b></div>
-</div>
-<div id="summaryCats"></div>
-</section>
+ <div id="days"></div>
+ <div id="dots" class="swipe"></div>
 
-<section class="panel" id="budget">
-<h2>Presupuestos</h2>
-<div class="small">Definí cuánto querés gastar en cada categoría durante el período.</div>
-<div id="budgetList"></div>
-</section>
-
-<section class="panel" id="analytics">
-<h2>Análisis</h2>
-<div id="categoryChart"></div>
-<h3 style="margin-top:18px">Comparación con otros períodos</h3>
-<div id="periodComparison"></div>
-</section>
-
-<section class="panel" id="searchPanel">
-<h2>Buscar gastos y notas</h2>
-<div class="search"><input id="searchInput" placeholder="Ej.: SUBE, cine, pareja..." oninput="searchAll()"><button onclick="document.getElementById('searchInput').value='';searchAll()">Limpiar</button></div>
-<div id="searchResults"></div>
-</section>
-
-<section class="panel" id="history">
-<h2>Historial</h2>
-<div id="historyList"></div>
-</section>
-
-<div class="panel" id="recurring">
-<h2>Gastos recurrentes</h2>
-<div class="small">Los gastos recurrentes se pueden aplicar al crear un nuevo período.</div>
-<div id="recurringList"></div>
-<button onclick="openRecurring()">Agregar gasto recurrente</button>
+ <section id="summary" class="panel"></section>
+ <section id="total" class="panel"></section>
+ <section id="budget" class="panel"></section>
+ <section id="analysis" class="panel"></section>
+ <section id="history" class="panel"></section>
+ <section id="search" class="panel"></section>
 </div>
 
-<div class="modal" id="modal"><div class="modal-box">
-<h2>Nuevo período</h2>
-<label>Fecha de inicio<input type="date" id="newStart"></label>
-<label style="margin-top:10px">Cantidad de días<input type="number" id="newDays" min="1" max="366" value="15"></label>
-<div class="actions"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPeriod()">Crear período</button></div>
-</div></div>
-
-<div class="modal" id="expenseModal"><div class="modal-box">
-<h2>Agregar gasto recurrente</h2>
-<label>Categoría
-<select id="recCat"><option value="comida">Comida</option><option value="transporte">Transporte</option><option value="internet">Internet</option><option value="seguro">Seguro</option><option value="ocio">Ocio</option><option value="prestamos">Préstamos</option><option value="otros">Otros</option></select></label>
-<label>Descripción<input id="recDesc" placeholder="Ej.: Internet"></label>
-<label>Monto<input type="number" id="recAmount" min="0"></label>
-<label>Día del período<input type="number" id="recDay" min="1" value="1"></label>
-<div class="actions"><button onclick="closeRecurring()">Cancelar</button><button class="primary" onclick="saveRecurring()">Guardar</button></div>
+<div id="newModal" class="modal"><div class="modal-box">
+ <h2>Nuevo período</h2>
+ <label>Fecha de inicio<input type="date" id="newDate"></label>
+ <label>Días<input type="number" id="newLen" value="15" min="1" max="366"></label>
+ <div class="actions"><button class="secondary" onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPeriod()">Crear período</button></div>
 </div></div>
 
 <script>
-const cats=['diet','extras','comida','transporte','internet','seguro','ocio','prestamos','otros'];
-const expenseCats=['comida','transporte','internet','seguro','ocio','prestamos','otros'];
-const labels={diet:'Dietética',extras:'Extras',comida:'Comida',transporte:'Transporte',internet:'Internet',seguro:'Seguro',ocio:'Ocio',prestamos:'Préstamos',otros:'Otros'};
+const income=['diet','extras'];
+const expenses=['comida','transporte','internet','seguro','ocio','prestamos','otros'];
+const names={diet:'Dietética',extras:'Extras',comida:'Comida',transporte:'Transporte',internet:'Internet',seguro:'Seguro',ocio:'Ocio',prestamos:'Préstamos',otros:'Otros'};
+const icons={comida:'🍔',transporte:'▤',internet:'◆',seguro:'◈',ocio:'●',prestamos:'▣',otros:'■'};
 let state=JSON.parse(localStorage.getItem('fin_state_v3')||'null');
+if(!state) state={nextId:2,current:1,periods:[{id:1,start:'2026-08-11',days:15}]};
 let budgets=JSON.parse(localStorage.getItem('fin_budgets_v5')||'{}');
-let recurring=JSON.parse(localStorage.getItem('fin_recurring_v5')||'[]');
-
+function save(){localStorage.setItem('fin_state_v3',JSON.stringify(state));localStorage.setItem('fin_budgets_v5',JSON.stringify(budgets))}
+function k(p,c,i){return 'fin3_'+p.id+'_'+c+i}
+function dk(p,c,i){return 'fin5_desc_'+p.id+'_'+c+i}
+function nk(p,i){return 'fin3_'+p.id+'_note'+i}
 function money(n){return '$'+Math.round(n||0).toLocaleString('es-AR')}
-function addDays(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
-function fmt(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})}
-function day(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long'})}
-function key(p,c,i){return 'fin3_'+p.id+'_'+c+i}
-function descKey(p,c,i){return 'fin5_desc_'+p.id+'_'+c+i}
-function noteKey(p,i){return 'fin3_'+p.id+'_note'+i}
-function periodTotal(p){let inc=0,g=0;for(let i=0;i<p.days;i++){for(const c of cats){let v=Number(localStorage.getItem(key(p,c,i)))||0;if(c==='diet'||c==='extras')inc+=v;else g+=v}}return {inc,g,balance:inc-g}}
-function save(){localStorage.setItem('fin_state_v3',JSON.stringify(state));localStorage.setItem('fin_budgets_v5',JSON.stringify(budgets));localStorage.setItem('fin_recurring_v5',JSON.stringify(recurring))}
-function init(){
- if(!state){state={nextId:2,current:1,periods:[{id:1,start:'2026-08-11',days:15}]};save()}
- render()
+function dateAdd(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function dateText(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})}
+function dayText(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long'})}
+function current(){return state.periods.find(p=>p.id===state.current)}
+function val(p,c,i){return Number(localStorage.getItem(k(p,c,i)))||0}
+function totals(p){
+ let inc=0,g=0;for(let i=0;i<p.days;i++){income.forEach(c=>inc+=val(p,c,i));expenses.forEach(c=>g+=val(p,c,i))}
+ return {inc,g,b:inc-g}
 }
-function toggleDark(){
- document.body.classList.toggle('dark');
- localStorage.setItem('fin_dark',document.body.classList.contains('dark')?'1':'0');
- document.getElementById('darkBtn').textContent=document.body.classList.contains('dark')?'Modo claro':'Modo oscuro'
-}
-document.body.classList.add('dark');
-localStorage.setItem('fin_dark','1');
-document.getElementById('darkBtn').textContent='Modo claro';
-
-function togglePanel(id){
- const p=document.getElementById(id);
- const show=p.style.display!=='block';
- document.querySelectorAll('.panel').forEach(x=>x.style.display='none');
- if(show){p.style.display='block';if(id==='summary')renderSummary();if(id==='budget')renderBudgets();if(id==='analytics')renderAnalytics();if(id==='history')renderHistory();if(id==='searchPanel')searchAll()}
-}
-
 function render(){
- const p=state.periods.find(x=>x.id===state.current);if(!p)return;
- document.getElementById('periodTitle').textContent=day(p.start).replace(/^./,x=>x.toUpperCase())+' '+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+' · '+p.days+' días';
- document.querySelectorAll('.panel').forEach(x=>x.style.display='none');
- const box=document.getElementById('days');box.innerHTML='';
+ const p=current();if(!p)return;
+ document.getElementById('period').textContent=dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+' · '+p.days+' días';
+ const t=totals(p);document.getElementById('heroBalance').textContent=money(t.b);document.getElementById('heroIncome').textContent=money(t.inc);document.getElementById('heroExpense').textContent=money(t.g);
+ const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';
  for(let i=0;i<p.days;i++){
-  const d=addDays(p.start,i),s=document.createElement('section');s.className='day';
-  let incomeRows=row('Dietética','diet',i)+row('Extras','extras',i);
-  let expenseRows=expenseCats.map(c=>row(labels[c],c,i)).join('');
-  s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2>'+
-   '<div class="section"><h3>Ingresos</h3>'+incomeRows+'<div class="total">Total ingresos: <span id="tin'+i+'">$0</span></div></div>'+
-   '<div class="section"><h3>Gastos</h3>'+expenseRows+'<div class="total">Total gastos: <span id="tg'+i+'">$0</span></div></div>'+
-   '<div class="section"><h3>Descripción de gastos</h3>'+expenseCats.map(c=>descRow(labels[c],c,i)).join('')+'</div>'+
-   '<div class="section"><label class="notes-label"><strong>Notas del día</strong><textarea id="note'+i+'" placeholder="Anotá algo sobre este día..."></textarea></label></div>'+
-   '<div class="balance">Saldo del día: <span id="saldo'+i+'">$0</span></div>';
-  box.appendChild(s)
+  let s=dateAdd(p.start,i),inc=income.reduce((a,c)=>a+val(p,c,i),0),g=expenses.reduce((a,c)=>a+val(p,c,i),0);
+  const d=document.createElement('section');d.className='day';
+  d.innerHTML='<div class="day-head"><h2>'+cap(dayText(s))+' '+dateText(s)+'</h2><span class="day-count">'+(i+1)+'/'+p.days+'</span></div>'+
+   '<div class="section-title in">Ingresos</div>'+income.map(c=>row(names[c],c,i)).join('')+
+   '<div class="total green">Total ingresos: '+money(inc)+'</div>'+
+   '<div class="section-title out">Gastos</div>'+expenses.map(c=>row(names[c],c,i)).join('')+
+   '<div class="total red">Total gastos: '+money(g)+'</div>'+
+   '<div class="notes"><label>Notas del día</label><textarea id="note'+i+'" placeholder="Anotá algo sobre este día...">'+esc(localStorage.getItem(nk(p,i))||'')+'</textarea></div>'+
+   '<div class="day-balance">Saldo del día: <b>'+money(inc-g)+'</b></div><div class="pixel-line"></div>';
+  box.appendChild(d);
  }
- for(let i=0;i<p.days;i++){
-  for(const c of cats){
-   const e=document.getElementById(c+i),v=localStorage.getItem(key(p,c,i));e.value=v===null?'0':v;e.addEventListener('input',calc)
-  }
-  for(const c of expenseCats){
-   const d=document.getElementById('desc_'+c+i);d.value=localStorage.getItem(descKey(p,c,i))||'';d.addEventListener('input',()=>localStorage.setItem(descKey(p,c,i),d.value))
-  }
-  const n=document.getElementById('note'+i);n.value=localStorage.getItem(noteKey(p,i))||'';n.addEventListener('input',()=>localStorage.setItem(noteKey(p,i),n.value))
- }
- calc()
+ box.querySelectorAll('input[data-key]').forEach(e=>e.addEventListener('input',e=>{
+   localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);render();
+ }));
+ box.querySelectorAll('textarea').forEach((e,i)=>e.addEventListener('input',()=>localStorage.setItem(nk(p,i),e.value)));
+ dots();
 }
-function row(l,c,i){return '<label>'+l+'<input type="number" min="0" step="1" id="'+c+i+'" inputmode="numeric"></label>'}
-function descRow(l,c,i){return '<label class="notes-label">'+l+'<input style="width:100%;text-align:left" id="desc_'+c+i+'" placeholder="¿En qué fue?"></label>'}
-function calc(){
- const p=state.periods.find(x=>x.id===state.current),sum={diet:0,extras:0,comida:0,transporte:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
- for(let i=0;i<p.days;i++){
-  let inc=0,g=0;
-  for(const c of cats){
-   const e=document.getElementById(c+i),v=Number(e.value)||0;sum[c]+=v;localStorage.setItem(key(p,c,i),v);
-   if(c==='diet'||c==='extras')inc+=v;else g+=v
-  }
-  document.getElementById('tin'+i).textContent=money(inc);document.getElementById('tg'+i).textContent=money(g);document.getElementById('saldo'+i).textContent=money(inc-g)
- }
- renderSummaryNumbers(sum)
+function row(label,c,i){
+ return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
 }
-function renderSummaryNumbers(sum){
- const inc=sum.diet+sum.extras,g=sum.comida+sum.transporte+sum.internet+sum.seguro+sum.ocio+sum.prestamos+sum.otros;
- document.getElementById('sin').textContent=money(inc);document.getElementById('sgastos').textContent=money(g);document.getElementById('ssaldo').textContent=money(inc-g);
- const p=state.periods.find(x=>x.id===state.current);document.getElementById('savg').textContent=money(g/p.days);
- const hb=document.getElementById('heroBalance'); if(hb) hb.textContent=money(inc-g);
- const hi=document.getElementById('heroIncome'); if(hi) hi.textContent=money(inc);
- const he=document.getElementById('heroExpense'); if(he) he.textContent=money(g);
+function dots(){
+ const p=current(),d=document.getElementById('dots');d.innerHTML='';
+ for(let i=0;i<p.days;i++){let x=document.createElement('i');x.className='dot'+(i===0?' active':'');d.appendChild(x)}
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function panel(id){
+ document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+ const e=document.getElementById(id);e.classList.add('show');
+ if(id==='summary'||id==='total')renderSummary();
+ if(id==='budget')renderBudget();
+ if(id==='analysis')renderAnalysis();
+ if(id==='history')renderHistory();
+ if(id==='search')renderSearch();
 }
 function renderSummary(){
- const p=state.periods.find(x=>x.id===state.current),sum={comida:0,transporte:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
- for(let i=0;i<p.days;i++)for(const c of expenseCats)sum[c]+=Number(localStorage.getItem(key(p,c,i)))||0;
- document.getElementById('summaryCats').innerHTML=expenseCats.map(c=>'<div class="budget-row"><b>'+labels[c]+'</b><span>'+money(sum[c])+'</span></div>').join('');
- const total=periodTotal(p);document.getElementById('sin').textContent=money(total.inc);document.getElementById('sgastos').textContent=money(total.g);document.getElementById('ssaldo').textContent=money(total.balance);document.getElementById('savg').textContent=money(total.g/p.days)
+ const p=current(),t=totals(p),el=document.getElementById('summary');el.innerHTML='<h2>Resumen del período</h2><div class="cards">'+
+  card('Saldo disponible',money(t.b),'green')+card('Ingresos',money(t.inc),'green')+card('Gastos',money(t.g),'red')+card('Promedio diario',money(t.g/p.days),'yellow')+'</div>'+
+  '<div style="margin-top:17px"><div class="small">Presupuesto utilizado</div><div style="display:flex;justify-content:space-between;margin:5px 0 7px"><b>'+money(t.g)+'</b><b>'+Math.round(t.g/(Object.values(budgets).reduce((a,b)=>a+Number(b||0),0)||1)*100)+'%</b></div><div class="progress"><i style="width:'+Math.min(100,t.g/(Object.values(budgets).reduce((a,b)=>a+Number(b||0),0)||1)*100)+'%"></i></div></div>'+
+  '<div style="margin-top:20px"><h3>Gastos por categoría</h3>'+expenses.map(c=>'<div class="category"><div class="cat-icon">'+icons[c]+'</div><div><div class="cat-name">'+names[c]+'</div><div class="cat-sub">'+money(periodCat(p,c))+'</div></div><div class="cat-money">'+Math.round(periodCat(p,c)/(t.g||1)*100)+'%</div></div>').join('')+'</div>';
+ document.getElementById('total').innerHTML=el.innerHTML.replace('<h2>Resumen del período</h2>','<h2>Total del período</h2>');
 }
-function renderBudgets(){
- const p=state.periods.find(x=>x.id===state.current),data=[];
- for(const c of expenseCats){let spent=0;for(let i=0;i<p.days;i++)spent+=Number(localStorage.getItem(key(p,c,i)))||0;let b=Number(budgets[c]||0);data.push({c,spent,b})}
- document.getElementById('budgetList').innerHTML=data.map(x=>{
-  const pct=x.b?Math.round(x.spent/x.b*100):0,visual=Math.min(pct,100);
-  return '<div class="budget-row '+(x.b&&x.spent>x.b?'over':'')+'"><div class="budget-head"><b>'+labels[x.c]+'</b><span>'+money(x.spent)+(x.b?' / '+money(x.b):'')+'</span></div><div class="bar-bg"><div class="bar" style="width:'+visual+'%"></div></div><div class="small">'+(x.b?(pct+'% utilizado · '+(x.spent>x.b?'Excedido '+money(x.spent-x.b):'Quedan '+money(x.b-x.spent))):'Sin presupuesto definido')+'</div><div class="budget-edit"><input type="number" min="0" placeholder="Presupuesto" value="'+(x.b||'')+'" onchange="setBudget(\''+x.c+'\',this.value)"><button onclick="setBudget(\''+x.c+'\',0)">Quitar</button></div></div>'
- }).join('');
+function card(a,b,c){return '<div class="card"><span>'+a+'</span><b style="color:var(--'+c+')">'+b+'</b></div>'}
+function periodCat(p,c){let n=0;for(let i=0;i<p.days;i++)n+=val(p,c,i);return n}
+function renderBudget(){
+ const p=current();let totalBudget=Object.values(budgets).reduce((a,b)=>a+Number(b||0),0);
+ document.getElementById('budget').innerHTML='<h2>Presupuesto por categoría</h2>'+expenses.map(c=>{
+  let spent=periodCat(p,c),b=Number(budgets[c]||0),pct=b?Math.round(spent/b*100):0;
+  return '<div class="category"><div class="cat-icon">'+icons[c]+'</div><div><div class="cat-name">'+names[c]+'</div><div class="cat-sub">'+money(spent)+(b?' / '+money(b):'')+'</div><div class="progress"><i style="width:'+Math.min(100,pct)+'%;background:'+(pct>100?'var(--red)':'var(--green)')+'"></i></div></div><div class="cat-money">'+(b?pct+'%':'—')+'</div></div>';
+ }).join('')+'<p class="small">La edición de presupuestos puede agregarse en una próxima versión sin cambiar los datos actuales.</p>';
 }
-function setBudget(c,v){budgets[c]=Number(v)||0;save();renderBudgets()}
-function renderAnalytics(){
- const p=state.periods.find(x=>x.id===state.current),sum={};expenseCats.forEach(c=>sum[c]=0);let max=1;
- for(let i=0;i<p.days;i++)for(const c of expenseCats){sum[c]+=Number(localStorage.getItem(key(p,c,i)))||0;max=Math.max(max,sum[c])}
- document.getElementById('categoryChart').innerHTML=expenseCats.map(c=>'<div class="chart-row"><span>'+labels[c]+'</span><div class="bar-bg"><div class="bar" style="width:'+Math.round(sum[c]/max*100)+'%"></div></div><b>'+money(sum[c])+'</b></div>').join('');
- const current=periodTotal(p);
- const others=state.periods.filter(x=>x.id!==p.id).slice().reverse().slice(0,5);
- document.getElementById('periodComparison').innerHTML=others.length?others.map(q=>{const t=periodTotal(q),diff=t.g?Math.round((current.g-t.g)/t.g*100):0;return '<div class="period-compare"><b>'+fmt(q.start)+' → '+fmt(addDays(q.start,q.days-1))+'</b><br>Gastos: '+money(t.g)+' · Diferencia actual: '+(diff>=0?'+':'')+diff+'%</div>'}).join(''):'<div class="small">Necesitás al menos otro período para comparar.</div>'
-}
-function searchAll(){
- const q=(document.getElementById('searchInput').value||'').trim().toLowerCase(),out=document.getElementById('searchResults');if(!q){out.innerHTML='<div class="small">Escribí algo para buscar en notas y descripciones.</div>';return}
- const results=[];
- for(const p of state.periods)for(let i=0;i<p.days;i++){
-  const date=day(addDays(p.start,i)).replace(/^./,x=>x.toUpperCase())+' '+fmt(addDays(p.start,i));
-  const note=(localStorage.getItem(noteKey(p,i))||'');
-  if(note.toLowerCase().includes(q))results.push('<div class="search-result"><b>'+date+'</b><br>Nota: '+escapeHtml(note)+'</div>');
-  for(const c of expenseCats){const d=localStorage.getItem(descKey(p,c,i))||'';if(d.toLowerCase().includes(q))results.push('<div class="search-result"><b>'+date+'</b><br>'+labels[c]+': '+escapeHtml(d)+' — '+money(Number(localStorage.getItem(key(p,c,i)))||0)+'</div>')}
- }
- out.innerHTML=results.length?results.join(''):'<div class="small">No encontré coincidencias.</div>'
-}
-function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-
-function openNew(){document.getElementById('newStart').value=new Date().toISOString().slice(0,10);document.getElementById('newDays').value=15;document.getElementById('modal').style.display='flex'}
-function closeModal(){document.getElementById('modal').style.display='none'}
-function createPeriod(){
- const start=document.getElementById('newStart').value,days=Math.max(1,Math.min(366,Number(document.getElementById('newDays').value)||15));if(!start)return;
- const p={id:state.nextId++,start,days};state.periods.push(p);state.current=p.id;
- for(const r of recurring){const idx=Math.max(0,Math.min(days-1,(Number(r.day)||1)-1));localStorage.setItem(key(p,r.cat,idx),r.amount);localStorage.setItem(descKey(p,r.cat,idx),r.desc)}
- save();closeModal();render();window.scrollTo(0,0)
+function renderAnalysis(){
+ const p=current(),t=totals(p),prev=state.periods.filter(x=>x.id!==p.id).sort((a,b)=>b.id-a.id)[0],pt=prev?totals(prev):null;
+ document.getElementById('analysis').innerHTML='<h2>Análisis</h2><div class="cards">'+card('Mayor gasto',names[expenses.reduce((a,c)=>periodCat(p,c)>periodCat(p,a)?c:a,expenses[0])],'green')+card('Días transcurridos',p.days,'yellow')+'</div>'+
+  '<div style="margin-top:18px"><h3>Comparación</h3>'+(pt?'<p>Período anterior: <b>'+money(pt.g)+'</b> en gastos.</p><p>Período actual: <b>'+money(t.g)+'</b>.</p><p style="color:'+(t.g<=pt.g?'var(--green)':'var(--red)')+'">'+(t.g<=pt.g?'Gastaste menos que en el período anterior.':'Gastaste más que en el período anterior.')+'</p>':'<p class="small">Cuando tengas otro período podremos compararlos.</p>')+'</div>';
 }
 function renderHistory(){
- const l=document.getElementById('historyList');l.innerHTML='';
- [...state.periods].reverse().forEach(p=>{const t=periodTotal(p),x=document.createElement('div');x.className='history-item';x.innerHTML='<span><b>'+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+'</b><br><small>'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.balance)+'</small></span><span><button onclick="openPeriod('+p.id+')">'+(p.id===state.current?'Actual':'Abrir')+'</button> <button class="danger" onclick="deletePeriod('+p.id+')">Borrar</button></span>';l.appendChild(x)})
+ const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button></div>'}).join('');
 }
-function openPeriod(id){state.current=id;save();render();window.scrollTo(0,0)}
-function deletePeriod(id){
- if(state.periods.length===1){alert('No podés borrar el único período.');return}
- const p=state.periods.find(x=>x.id===id);if(!confirm('¿Borrar este período y todos sus datos?'))return;
- for(let i=0;i<p.days;i++){for(const c of cats){localStorage.removeItem(key(p,c,i));for(const ec of expenseCats)localStorage.removeItem(descKey(p,ec,i))}localStorage.removeItem(noteKey(p,i))}
- state.periods=state.periods.filter(x=>x.id!==id);if(state.current===id)state.current=state.periods[state.periods.length-1].id;save();render()
+function renderSearch(){
+ document.getElementById('search').innerHTML='<h2>Buscar</h2><div class="search"><input id="q" placeholder="SUBE, cine, supermercado..." oninput="doSearch()"><button class="secondary" onclick="document.getElementById(\'q\').value=\'\';doSearch()">Limpiar</button></div><div id="results"></div>';
 }
-function clearCurrent(){
- if(!confirm('¿Borrar todos los ingresos, gastos, descripciones y notas del período actual?'))return;
- const p=state.periods.find(x=>x.id===state.current);
- for(let i=0;i<p.days;i++){for(const c of cats)localStorage.removeItem(key(p,c,i));for(const ec of expenseCats)localStorage.removeItem(descKey(p,ec,i));localStorage.removeItem(noteKey(p,i))}
- render()
+function doSearch(){
+ const q=(document.getElementById('q').value||'').toLowerCase(),r=document.getElementById('results');if(!q){r.innerHTML='<p class="small">Buscá descripciones o notas.</p>';return}
+ let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++){let n=localStorage.getItem(nk(p,i))||'';if(n.toLowerCase().includes(q))a.push('<div class="category"><div>📝</div><div><b>'+dateText(dateAdd(p.start,i))+'</b><div class="cat-sub">'+esc(n)+'</div></div></div>')}
+ r.innerHTML=a.length?a.join(''):'<p class="small">No encontré coincidencias.</p>';
 }
-function openRecurring(){document.getElementById('expenseModal').style.display='flex'}
-function closeRecurring(){document.getElementById('expenseModal').style.display='none'}
-function saveRecurring(){
- const r={cat:document.getElementById('recCat').value,desc:document.getElementById('recDesc').value.trim(),amount:Number(document.getElementById('recAmount').value)||0,day:Number(document.getElementById('recDay').value)||1};
- if(!r.amount){alert('Ingresá un monto.');return}
- recurring.push(r);save();closeRecurring();alert('Gasto recurrente guardado. Se aplicará en los próximos períodos.')
-}
-init();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
+function newPeriod(){document.getElementById('newDate').value=new Date().toISOString().slice(0,10);document.getElementById('newLen').value=15;document.getElementById('newModal').classList.add('show')}
+function closeModal(){document.getElementById('newModal').classList.remove('show')}
+function createPeriod(){let s=document.getElementById('newDate').value,n=Math.max(1,Math.min(366,Number(document.getElementById('newLen').value)||15));let p={id:state.nextId++,start:s,days:n};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
+function openPeriod(id){state.current=id;save();document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));render();window.scrollTo(0,0)}
+function toggleDark(){document.body.classList.toggle('light');}
+render();
 </script>
 </body>
 </html>
