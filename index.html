@@ -30,11 +30,11 @@ input{width:125px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:
 .modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:flex-end}.modal-box{background:#fff;width:100%;max-width:520px;margin:auto;padding:18px;border-radius:18px 18px 0 0}
 .modal-box label{display:block}.modal-box input{width:100%;text-align:left;margin-top:5px}.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1}.small{font-size:12px;color:#777;margin-top:8px}
 </style></head><body><main>
-<h1>Mis Finanzas</h1><div class="sub" id="periodTitle"></div>
+<h1>Mis Finanzas</h1><div class="sub" id="periodTitle"></div><div class="small">Dietética se registra por día. Los pagos del chino se cargan completos en Extras cuando los cobrás.</div>
 <div class="top"><button class="primary" onclick="openNew()">Nuevo período</button><button onclick="toggleHistory()">Historial</button><button onclick="toggleDark()" id="darkBtn">Modo oscuro</button></div>
 <div id="days"></div>
 <section class="summary"><h2>Total del período</h2>
-<div><span>Dietética</span><b id="sdiet">$0</b></div><div><span>Chino</span><b id="schino">$0</b></div><div><span>Extras</span><b id="sextras">$0</b></div><div><span>Ingresos totales</span><b id="sin">$0</b></div>
+<div><span>Dietética</span><b id="sdiet">$0</b></div><div><span>Extras</span><b id="sextras">$0</b></div><div><span>Ingresos totales</span><b id="sin">$0</b></div>
 <div><span>Comida</span><b id="scomida">$0</b></div><div><span>Internet</span><b id="sinternet">$0</b></div><div><span>Seguro</span><b id="sseguro">$0</b></div><div><span>Ocio</span><b id="socio">$0</b></div><div><span>Préstamos</span><b id="sprestamos">$0</b></div><div><span>Otros</span><b id="sotros">$0</b></div>
 <div><span>Gastos totales</span><b id="sgastos">$0</b></div><div style="border-top:1px solid #555;margin-top:6px;padding-top:9px"><span>Saldo final</span><b id="ssaldo">$0</b></div>
 <button onclick="window.print()">Imprimir / guardar PDF</button><button class="danger" onclick="clearCurrent()">Borrar datos del período actual</button>
@@ -47,7 +47,7 @@ input{width:125px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:
 <div class="actions"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPeriod()">Crear período</button></div>
 </div></div>
 <script>
-const cats=['diet','chino','extras','comida','internet','seguro','ocio','prestamos','otros'];
+const cats=['diet','extras','comida','internet','seguro','ocio','prestamos','otros'];
 let state=JSON.parse(localStorage.getItem('fin_state_v3')||'null');
 function money(n){return '$'+Math.round(n||0).toLocaleString('es-AR')}
 function addDays(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
@@ -68,16 +68,16 @@ function render(){
  document.getElementById('periodTitle').textContent=day(p.start).replace(/^./,x=>x.toUpperCase())+' '+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+' · '+p.days+' días';
  let box=document.getElementById('days');box.innerHTML='';
  for(let i=0;i<p.days;i++){let d=addDays(p.start,i),s=document.createElement('section');s.className='day';
- s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2><div class="section"><h3>Ingresos</h3>'+row('Dietética','diet',i)+row('Chino','chino',i)+row('Extras','extras',i)+'<div class="total">Total ingresos: <span id="tin'+i+'">$0</span></div></div><div class="section"><h3>Gastos</h3>'+row('Comida','comida',i)+row('Internet','internet',i)+row('Seguro','seguro',i)+row('Ocio','ocio',i)+row('Préstamos','prestamos',i)+row('Otros','otros',i)+'<div class="total">Total gastos: <span id="tg'+i+'">$0</span></div></div><div class="balance">Saldo del día: <span id="saldo'+i+'">$0</span></div>';
+ s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2><div class="section"><h3>Ingresos</h3>'+row('Dietética','diet',i)+row('Extras','extras',i)+'<div class="total">Total ingresos: <span id="tin'+i+'">$0</span></div></div><div class="section"><h3>Gastos</h3>'+row('Comida','comida',i)+row('Internet','internet',i)+row('Seguro','seguro',i)+row('Ocio','ocio',i)+row('Préstamos','prestamos',i)+row('Otros','otros',i)+'<div class="total">Total gastos: <span id="tg'+i+'">$0</span></div></div><div class="balance">Saldo del día: <span id="saldo'+i+'">$0</span></div>';
  box.appendChild(s)}
  for(let i=0;i<p.days;i++)for(let c of cats){let e=document.getElementById(c+i),v=localStorage.getItem(key(p,c,i));e.value=v===null?'0':v;e.addEventListener('input',calc)}calc()
 }
 function row(l,c,i){return '<label>'+l+'<input type="number" min="0" step="1" id="'+c+i+'" inputmode="numeric"></label>'}
 function calc(){
- let p=state.periods.find(x=>x.id===state.current),sum={diet:0,chino:0,extras:0,comida:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
- for(let i=0;i<p.days;i++){let inc=0,g=0;for(let c of cats){let e=document.getElementById(c+i),v=Number(e.value)||0;sum[c]+=v;localStorage.setItem(key(p,c,i),v);if(c==='diet'||c==='chino'||c==='extras')inc+=v;else g+=v}document.getElementById('tin'+i).textContent=money(inc);document.getElementById('tg'+i).textContent=money(g);document.getElementById('saldo'+i).textContent=money(inc-g)}
+ let p=state.periods.find(x=>x.id===state.current),sum={diet:0,extras:0,comida:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
+ for(let i=0;i<p.days;i++){let inc=0,g=0;for(let c of cats){let e=document.getElementById(c+i),v=Number(e.value)||0;sum[c]+=v;localStorage.setItem(key(p,c,i),v);if(c==='diet'||c==='extras')inc+=v;else g+=v}document.getElementById('tin'+i).textContent=money(inc);document.getElementById('tg'+i).textContent=money(g);document.getElementById('saldo'+i).textContent=money(inc-g)}
  for(let c of cats)document.getElementById('s'+c).textContent=money(sum[c]);
- let inc=sum.diet+sum.chino+sum.extras,g=sum.comida+sum.internet+sum.seguro+sum.ocio+sum.prestamos+sum.otros;
+ let inc=sum.diet+sum.extras,g=sum.comida+sum.internet+sum.seguro+sum.ocio+sum.prestamos+sum.otros;
  document.getElementById('sin').textContent=money(inc);document.getElementById('sgastos').textContent=money(g);document.getElementById('ssaldo').textContent=money(inc-g)
 }
 function openNew(){document.getElementById('newStart').value=new Date().toISOString().slice(0,10);document.getElementById('newDays').value=15;document.getElementById('modal').style.display='flex'}
