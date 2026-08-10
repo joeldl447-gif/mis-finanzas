@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#222222">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finanzas 11/08 al 25/08</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;margin:0;color:#222}
+main{max-width:520px;margin:auto;padding:14px}
+h1{font-size:24px;margin:8px 0 4px}
+.subtitle{color:#666;margin-bottom:14px}
+.day{background:white;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 5px #0001}
+h2{font-size:19px;margin:0 0 12px}
+.section{border-top:1px solid #eee;padding-top:10px;margin-top:10px}
+h3{font-size:15px;margin:0 0 8px}
+label{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
+input{width:125px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:16px;text-align:right}
+.total{font-weight:600;margin-top:8px;text-align:right}
+.balance{margin-top:12px;padding:10px;border-radius:9px;background:#eef6ee;font-weight:700;text-align:center}
+.summary{background:#222;color:white;border-radius:14px;padding:16px;margin:18px 0}
+.summary h2{margin-bottom:12px}
+.summary div{display:flex;justify-content:space-between;padding:5px 0}
+button{width:100%;padding:11px;border:0;border-radius:9px;background:#ddd;font-size:15px;margin-top:8px}
+.small{font-size:12px;color:#777;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>Finanzas — 11/08 al 25/08</h1>
+<div class="subtitle">Cargá solamente tus gastos. Las cuentas se hacen automáticamente.</div>
+<div id="days">
+    <section class="day">
+      <h2>Martes 11/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet0" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino0" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin0">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida0" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet0" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro0" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio0" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros0" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg0">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo0">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Miércoles 12/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet1" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino1" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin1">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida1" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet1" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro1" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio1" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros1" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg1">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo1">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Jueves 13/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet2" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino2" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin2">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida2" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet2" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro2" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio2" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros2" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg2">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo2">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Viernes 14/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet3" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino3" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin3">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida3" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet3" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro3" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio3" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros3" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg3">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo3">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Sábado 15/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet4" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino4" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin4">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida4" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet4" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro4" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio4" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros4" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg4">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo4">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Domingo 16/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet5" value="0" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino5" value="0" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin5">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida5" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet5" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro5" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio5" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros5" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg5">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo5">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Lunes 17/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet6" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino6" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin6">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida6" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet6" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro6" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio6" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros6" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg6">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo6">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Martes 18/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet7" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino7" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin7">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida7" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet7" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro7" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio7" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros7" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg7">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo7">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Miércoles 19/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet8" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino8" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin8">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida8" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet8" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro8" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio8" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros8" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg8">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo8">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Jueves 20/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet9" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino9" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin9">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida9" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet9" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro9" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio9" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros9" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg9">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo9">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Viernes 21/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet10" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino10" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin10">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida10" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet10" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro10" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio10" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros10" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg10">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo10">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Sábado 22/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet11" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino11" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin11">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida11" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet11" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro11" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio11" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros11" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg11">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo11">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Domingo 23/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet12" value="0" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino12" value="0" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin12">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida12" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet12" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro12" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio12" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros12" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg12">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo12">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Lunes 24/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet13" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino13" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin13">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida13" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet13" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro13" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio13" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros13" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg13">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo13">$0</span></div>
+    </section>
+    
+    <section class="day">
+      <h2>Martes 25/08</h2>
+      <div class="section">
+        <h3>Ingresos</h3>
+        <label>Dietética <input type="number" id="diet14" value="20000" inputmode="numeric"></label>
+        <label>Chino <input type="number" id="chino14" value="16666" inputmode="numeric"></label>
+        <div class="total">Total ingresos: <span id="tin14">$0</span></div>
+      </div>
+      <div class="section">
+        <h3>Gastos</h3>
+        <label>Comida <input type="number" id="comida14" value="0" inputmode="numeric"></label>
+        <label>Internet <input type="number" id="internet14" value="0" inputmode="numeric"></label>
+        <label>Seguro <input type="number" id="seguro14" value="0" inputmode="numeric"></label>
+        <label>Ocio <input type="number" id="ocio14" value="0" inputmode="numeric"></label>
+        <label>Otros <input type="number" id="otros14" value="0" inputmode="numeric"></label>
+        <div class="total">Total gastos: <span id="tg14">$0</span></div>
+      </div>
+      <div class="balance">Saldo del día: <span id="saldo14">$0</span></div>
+    </section>
+    </div>
+<section class="summary">
+<h2>Total del período</h2>
+<div><span>Dietética</span><b id="sdiet">$0</b></div>
+<div><span>Chino</span><b id="schino">$0</b></div>
+<div><span>Ingresos totales</span><b id="sin">$0</b></div>
+<div><span>Comida</span><b id="scomida">$0</b></div>
+<div><span>Internet</span><b id="sinternet">$0</b></div>
+<div><span>Seguro</span><b id="sseguro">$0</b></div>
+<div><span>Ocio</span><b id="socio">$0</b></div>
+<div><span>Otros</span><b id="sotros">$0</b></div>
+<div><span>Gastos totales</span><b id="sgastos">$0</b></div>
+<div style="border-top:1px solid #555;margin-top:6px;padding-top:9px"><span>Saldo final</span><b id="ssaldo">$0</b></div>
+<button onclick="window.print()">Imprimir / guardar PDF</button>
+<button onclick="clearAll()" style="background:#f3dede;color:#8b1e1e;font-weight:600">Borrar todos los datos</button>
+<div class="small">Los datos quedan guardados en este dispositivo mientras uses este navegador.</div>
+</section>
+</main>
+<script>
+if (localStorage.getItem('fin_version') !== '2') {
+  for (let i=0; i<15; i++) {
+    for (const c of ['diet','chino','comida','internet','seguro','ocio','otros']) {
+      localStorage.removeItem('fin_'+c+i);
+    }
+  }
+  localStorage.setItem('fin_version', '2');
+}
+const N=15;
+const cats=['diet','chino','comida','internet','seguro','ocio','otros'];
+function money(n){return '$'+Math.round(n).toLocaleString('es-AR')}
+function calc() {
+  let sums={diet:0,chino:0,comida:0,internet:0,seguro:0,ocio:0,otros:0};
+  for(let i=0;i<N;i++){
+    let tin=0,tg=0;
+    for(const c of cats){
+      const el=document.getElementById(c+i);
+      const v=Number(el.value)||0;
+      sums[c]+=v;
+      if(c==='diet'||c==='chino') tin+=v; else tg+=v;
+      localStorage.setItem('fin_'+c+i,el.value);
+    }
+    document.getElementById('tin'+i).textContent=money(tin);
+    document.getElementById('tg'+i).textContent=money(tg);
+    document.getElementById('saldo'+i).textContent=money(tin-tg);
+  }
+  document.getElementById('sdiet').textContent=money(sums.diet);
+  document.getElementById('schino').textContent=money(sums.chino);
+  const inc=sums.diet+sums.chino;
+  const gastos=sums.comida+sums.internet+sums.seguro+sums.ocio+sums.otros;
+  document.getElementById('sin').textContent=money(inc);
+  document.getElementById('scomida').textContent=money(sums.comida);
+  document.getElementById('sinternet').textContent=money(sums.internet);
+  document.getElementById('sseguro').textContent=money(sums.seguro);
+  document.getElementById('socio').textContent=money(sums.ocio);
+  document.getElementById('sotros').textContent=money(sums.otros);
+  document.getElementById('sgastos').textContent=money(gastos);
+  document.getElementById('ssaldo').textContent=money(inc-gastos);
+}
+for(let i=0;i<N;i++) for(const c of cats){
+  const el=document.getElementById(c+i);
+  const saved=localStorage.getItem('fin_'+c+i);
+  if(saved!==null) el.value=saved;
+  el.addEventListener('input',calc);
+}
+calc();
+
+function clearAll() {
+  if (!confirm('¿Querés borrar todos los ingresos y gastos de los 15 días? Esta acción no se puede deshacer.')) return;
+  for (let i=0; i<N; i++) {
+    for (const c of cats) {
+      localStorage.removeItem('fin_'+c+i);
+      document.getElementById(c+i).value = 0;
+    }
+  }
+  calc();
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
