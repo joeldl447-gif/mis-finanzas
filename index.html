@@ -3,7 +3,8 @@
 <meta name="theme-color" content="#222"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
 <title>Mis Finanzas</title>
 <style>
-*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;margin:0;color:#222;transition:background .2s,color .2s}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;margin:0;color:#222;transition:background .2s,color .2s}
 body.dark{background:#121212;color:#eee}
 body.dark .sub{color:#aaa}
 body.dark .top{background:#121212}
@@ -11,31 +12,46 @@ body.dark button{background:#333;color:#eee}
 body.dark .primary{background:#eee;color:#111}
 body.dark .day,body.dark .history,body.dark .modal-box{background:#1e1e1e;color:#eee;box-shadow:0 1px 5px #0008}
 body.dark .section,body.dark .history-item{border-color:#333}
-body.dark input{background:#2a2a2a;color:#fff;border-color:#555}
+body.dark input,body.dark textarea{background:#2a2a2a;color:#fff;border-color:#555}
 body.dark .balance{background:#17321e}
 body.dark .summary{background:#050505}
 body.dark .danger{background:#4a2222;color:#ffb8b8}
 body.dark .small{color:#aaa}
-main{max-width:520px;margin:auto;padding:14px}h1{font-size:24px;margin:8px 0 3px}.sub{color:#666;margin-bottom:10px}
+main{max-width:520px;margin:auto;padding:14px}
+h1{font-size:24px;margin:8px 0 3px}
+.sub{color:#666;margin-bottom:10px}
 .top{display:flex;gap:8px;margin:8px 0;position:sticky;top:0;background:#f5f5f5;padding:8px 0;z-index:5}
-button{border:0;border-radius:9px;padding:10px 12px;font-size:14px;background:#ddd}.primary{background:#222;color:#fff}
-.day,.history{background:#fff;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 5px #0001}h2{font-size:19px;margin:0 0 12px}
-.section{border-top:1px solid #eee;padding-top:10px;margin-top:10px}h3{font-size:15px;margin:0 0 8px}
+button{border:0;border-radius:9px;padding:10px 12px;font-size:14px;background:#ddd}
+.primary{background:#222;color:#fff}
+.day,.history{background:#fff;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 1px 5px #0001}
+h2{font-size:19px;margin:0 0 12px}
+.section{border-top:1px solid #eee;padding-top:10px;margin-top:10px}
+h3{font-size:15px;margin:0 0 8px}
 label{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
 input{width:125px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:16px;text-align:right}
-.total{font-weight:600;margin-top:8px;text-align:right}.balance{margin-top:12px;padding:10px;border-radius:9px;background:#eef6ee;font-weight:700;text-align:center}
-.summary{background:#222;color:#fff;border-radius:14px;padding:16px;margin:18px 0}.summary div{display:flex;justify-content:space-between;padding:5px 0}
-.summary h2{margin-bottom:12px}.danger{background:#f3dede;color:#8b1e1e;margin-top:8px;width:100%}
+.notes-label{display:block}
+textarea{width:100%;min-height:82px;resize:vertical;padding:9px;border:1px solid #ccc;border-radius:8px;font:inherit;font-size:15px;margin-top:6px}
+.total{font-weight:600;margin-top:8px;text-align:right}
+.balance{margin-top:12px;padding:10px;border-radius:9px;background:#eef6ee;font-weight:700;text-align:center}
+.summary{background:#222;color:#fff;border-radius:14px;padding:16px;margin:18px 0}
+.summary div{display:flex;justify-content:space-between;padding:5px 0}
+.summary h2{margin-bottom:12px}
+.danger{background:#f3dede;color:#8b1e1e;margin-top:8px;width:100%}
 .history-item{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #eee;padding:10px 0}
-.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:flex-end}.modal-box{background:#fff;width:100%;max-width:520px;margin:auto;padding:18px;border-radius:18px 18px 0 0}
-.modal-box label{display:block}.modal-box input{width:100%;text-align:left;margin-top:5px}.actions{display:flex;gap:8px;margin-top:14px}.actions button{flex:1}.small{font-size:12px;color:#777;margin-top:8px}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;align-items:flex-end}
+.modal-box{background:#fff;width:100%;max-width:520px;margin:auto;padding:18px;border-radius:18px 18px 0 0}
+.modal-box label{display:block}
+.modal-box input{width:100%;text-align:left;margin-top:5px}
+.actions{display:flex;gap:8px;margin-top:14px}
+.actions button{flex:1}
+.small{font-size:12px;color:#777;margin-top:8px}
 </style></head><body><main>
-<h1>Mis Finanzas</h1><div class="sub" id="periodTitle"></div><div class="small">Dietética se registra por día. Los pagos del chino se cargan completos en Extras cuando los cobrás.</div>
+<h1>Mis Finanzas</h1><div class="sub" id="periodTitle"></div>
 <div class="top"><button class="primary" onclick="openNew()">Nuevo período</button><button onclick="toggleHistory()">Historial</button><button onclick="toggleDark()" id="darkBtn">Modo oscuro</button></div>
 <div id="days"></div>
 <section class="summary"><h2>Total del período</h2>
-<div><span>Dietética</span><b id="sdiet">$0</b></div><div><span>Extras</span><b id="sextras">$0</b></div><div><span>Ingresos totales</span><b id="sin">$0</b></div>
-<div><span>Comida</span><b id="scomida">$0</b></div><div><span>Internet</span><b id="sinternet">$0</b></div><div><span>Seguro</span><b id="sseguro">$0</b></div><div><span>Ocio</span><b id="socio">$0</b></div><div><span>Préstamos</span><b id="sprestamos">$0</b></div><div><span>Otros</span><b id="sotros">$0</b></div>
+<div><span>Dietética</span><b id="sdiet">$0</b></div><div><span>Chino</span><b id="schino">$0</b></div><div><span>Extras</span><b id="sextras">$0</b></div><div><span>Ingresos totales</span><b id="sin">$0</b></div>
+<div><span>Comida</span><b id="scomida">$0</b></div><div><span>Transporte</span><b id="stransporte">$0</b></div><div><span>Internet</span><b id="sinternet">$0</b></div><div><span>Seguro</span><b id="sseguro">$0</b></div><div><span>Ocio</span><b id="socio">$0</b></div><div><span>Préstamos</span><b id="sprestamos">$0</b></div><div><span>Otros</span><b id="sotros">$0</b></div>
 <div><span>Gastos totales</span><b id="sgastos">$0</b></div><div style="border-top:1px solid #555;margin-top:6px;padding-top:9px"><span>Saldo final</span><b id="ssaldo">$0</b></div>
 <button onclick="window.print()">Imprimir / guardar PDF</button><button class="danger" onclick="clearCurrent()">Borrar datos del período actual</button>
 <div class="small">Los datos se guardan en este dispositivo.</div></section>
@@ -47,13 +63,14 @@ input{width:125px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:
 <div class="actions"><button onclick="closeModal()">Cancelar</button><button class="primary" onclick="createPeriod()">Crear período</button></div>
 </div></div>
 <script>
-const cats=['diet','extras','comida','internet','seguro','ocio','prestamos','otros'];
+const cats=['diet','chino','extras','comida','transporte','internet','seguro','ocio','prestamos','otros'];
 let state=JSON.parse(localStorage.getItem('fin_state_v3')||'null');
 function money(n){return '$'+Math.round(n||0).toLocaleString('es-AR')}
 function addDays(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function fmt(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})}
 function day(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long'})}
 function key(p,c,i){return 'fin3_'+p.id+'_'+c+i}
+function noteKey(p,i){return 'fin3_'+p.id+'_note'+i}
 function init(){if(!state){state={nextId:2,current:1,periods:[{id:1,start:'2026-08-11',days:15}]};save()}render()}
 function save(){localStorage.setItem('fin_state_v3',JSON.stringify(state))}
 function toggleDark(){
@@ -62,38 +79,77 @@ function toggleDark(){
   document.getElementById('darkBtn').textContent=document.body.classList.contains('dark')?'Modo claro':'Modo oscuro';
 }
 if(localStorage.getItem('fin_dark')==='1') document.body.classList.add('dark');
+if(document.body.classList.contains('dark')) document.getElementById('darkBtn').textContent='Modo claro';
 
 function render(){
  let p=state.periods.find(x=>x.id===state.current);if(!p)return;
  document.getElementById('periodTitle').textContent=day(p.start).replace(/^./,x=>x.toUpperCase())+' '+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+' · '+p.days+' días';
  let box=document.getElementById('days');box.innerHTML='';
- for(let i=0;i<p.days;i++){let d=addDays(p.start,i),s=document.createElement('section');s.className='day';
- s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2><div class="section"><h3>Ingresos</h3>'+row('Dietética','diet',i)+row('Extras','extras',i)+'<div class="total">Total ingresos: <span id="tin'+i+'">$0</span></div></div><div class="section"><h3>Gastos</h3>'+row('Comida','comida',i)+row('Internet','internet',i)+row('Seguro','seguro',i)+row('Ocio','ocio',i)+row('Préstamos','prestamos',i)+row('Otros','otros',i)+'<div class="total">Total gastos: <span id="tg'+i+'">$0</span></div></div><div class="balance">Saldo del día: <span id="saldo'+i+'">$0</span></div>';
- box.appendChild(s)}
- for(let i=0;i<p.days;i++)for(let c of cats){let e=document.getElementById(c+i),v=localStorage.getItem(key(p,c,i));e.value=v===null?'0':v;e.addEventListener('input',calc)}calc()
+ for(let i=0;i<p.days;i++){
+   let d=addDays(p.start,i),s=document.createElement('section');s.className='day';
+   s.innerHTML='<h2>'+day(d).replace(/^./,x=>x.toUpperCase())+' '+fmt(d)+'</h2>'+
+   '<div class="section"><h3>Ingresos</h3>'+row('Dietética','diet',i)+row('Chino','chino',i)+row('Extras','extras',i)+'<div class="total">Total ingresos: <span id="tin'+i+'">$0</span></div></div>'+
+   '<div class="section"><h3>Gastos</h3>'+row('Comida','comida',i)+row('Transporte','transporte',i)+row('Internet','internet',i)+row('Seguro','seguro',i)+row('Ocio','ocio',i)+row('Préstamos','prestamos',i)+row('Otros','otros',i)+'<div class="total">Total gastos: <span id="tg'+i+'">$0</span></div></div>'+
+   '<div class="section"><label class="notes-label"><strong>Notas del día</strong><textarea id="note'+i+'" placeholder="Anotá algo sobre este día..."></textarea></label></div>'+
+   '<div class="balance">Saldo del día: <span id="saldo'+i+'">$0</span></div>';
+   box.appendChild(s);
+ }
+ for(let i=0;i<p.days;i++){
+   for(let c of cats){
+     let e=document.getElementById(c+i),v=localStorage.getItem(key(p,c,i));
+     e.value=v===null?'0':v;e.addEventListener('input',calc);
+   }
+   let n=document.getElementById('note'+i);
+   n.value=localStorage.getItem(noteKey(p,i))||'';
+   n.addEventListener('input',()=>localStorage.setItem(noteKey(p,i),n.value));
+ }
+ calc()
 }
 function row(l,c,i){return '<label>'+l+'<input type="number" min="0" step="1" id="'+c+i+'" inputmode="numeric"></label>'}
 function calc(){
- let p=state.periods.find(x=>x.id===state.current),sum={diet:0,extras:0,comida:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
- for(let i=0;i<p.days;i++){let inc=0,g=0;for(let c of cats){let e=document.getElementById(c+i),v=Number(e.value)||0;sum[c]+=v;localStorage.setItem(key(p,c,i),v);if(c==='diet'||c==='extras')inc+=v;else g+=v}document.getElementById('tin'+i).textContent=money(inc);document.getElementById('tg'+i).textContent=money(g);document.getElementById('saldo'+i).textContent=money(inc-g)}
+ let p=state.periods.find(x=>x.id===state.current),sum={diet:0,chino:0,extras:0,comida:0,transporte:0,internet:0,seguro:0,ocio:0,prestamos:0,otros:0};
+ for(let i=0;i<p.days;i++){
+   let inc=0,g=0;
+   for(let c of cats){
+     let e=document.getElementById(c+i),v=Number(e.value)||0;
+     sum[c]+=v;localStorage.setItem(key(p,c,i),v);
+     if(c==='diet'||c==='chino'||c==='extras')inc+=v;else g+=v
+   }
+   document.getElementById('tin'+i).textContent=money(inc);
+   document.getElementById('tg'+i).textContent=money(g);
+   document.getElementById('saldo'+i).textContent=money(inc-g)
+ }
  for(let c of cats)document.getElementById('s'+c).textContent=money(sum[c]);
- let inc=sum.diet+sum.extras,g=sum.comida+sum.internet+sum.seguro+sum.ocio+sum.prestamos+sum.otros;
+ let inc=sum.diet+sum.chino+sum.extras,g=sum.comida+sum.transporte+sum.internet+sum.seguro+sum.ocio+sum.prestamos+sum.otros;
  document.getElementById('sin').textContent=money(inc);document.getElementById('sgastos').textContent=money(g);document.getElementById('ssaldo').textContent=money(inc-g)
 }
 function openNew(){document.getElementById('newStart').value=new Date().toISOString().slice(0,10);document.getElementById('newDays').value=15;document.getElementById('modal').style.display='flex'}
 function closeModal(){document.getElementById('modal').style.display='none'}
 function createPeriod(){let start=document.getElementById('newStart').value,days=Math.max(1,Math.min(366,Number(document.getElementById('newDays').value)||15));if(!start)return;let p={id:state.nextId++,start,days};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
-function toggleHistory(){let h=document.getElementById('history');h.style.display=h.style.display==='none'?'block':'none';if(h.style.display==='none')return;let l=document.getElementById('historyList');l.innerHTML='';[...state.periods].reverse().forEach(p=>{let x=document.createElement('div');x.className='history-item';x.innerHTML='<span>'+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+'<br><small>'+p.days+' días</small></span><span><button onclick="openPeriod('+p.id+')">'+(p.id===state.current?'Actual':'Abrir')+'</button> <button class="danger" onclick="deletePeriod('+p.id+')">Borrar</button></span>';l.appendChild(x)})}
+function toggleHistory(){
+ let h=document.getElementById('history');h.style.display=h.style.display==='none'?'block':'none';if(h.style.display==='none')return;
+ let l=document.getElementById('historyList');l.innerHTML='';
+ [...state.periods].reverse().forEach(p=>{
+   let x=document.createElement('div');x.className='history-item';
+   x.innerHTML='<span>'+fmt(p.start)+' → '+fmt(addDays(p.start,p.days-1))+'<br><small>'+p.days+' días</small></span><span><button onclick="openPeriod('+p.id+')">'+(p.id===state.current?'Actual':'Abrir')+'</button> <button class="danger" onclick="deletePeriod('+p.id+')">Borrar</button></span>';
+   l.appendChild(x)
+ })
+}
 function openPeriod(id){state.current=id;save();document.getElementById('history').style.display='none';render();window.scrollTo(0,0)}
 function deletePeriod(id){
-  if(state.periods.length===1){alert('No podés borrar el único período.');return}
-  const p=state.periods.find(x=>x.id===id);
-  if(!confirm('¿Borrar este período y todos sus datos?'))return;
-  for(let i=0;i<p.days;i++)for(const c of cats)localStorage.removeItem(key(p,c,i));
-  state.periods=state.periods.filter(x=>x.id!==id);
-  if(state.current===id)state.current=state.periods[state.periods.length-1].id;
-  save();render();document.getElementById('history').style.display='none';
+ if(state.periods.length===1){alert('No podés borrar el único período.');return}
+ const p=state.periods.find(x=>x.id===id);
+ if(!confirm('¿Borrar este período y todos sus datos?'))return;
+ for(let i=0;i<p.days;i++){for(const c of cats)localStorage.removeItem(key(p,c,i));localStorage.removeItem(noteKey(p,i))}
+ state.periods=state.periods.filter(x=>x.id!==id);
+ if(state.current===id)state.current=state.periods[state.periods.length-1].id;
+ save();render();document.getElementById('history').style.display='none';
 }
-function clearCurrent(){if(!confirm('¿Borrar todos los ingresos y gastos del período actual?'))return;let p=state.periods.find(x=>x.id===state.current);for(let i=0;i<p.days;i++)for(let c of cats)localStorage.removeItem(key(p,c,i));render()}
+function clearCurrent(){
+ if(!confirm('¿Borrar todos los ingresos, gastos y notas del período actual?'))return;
+ let p=state.periods.find(x=>x.id===state.current);
+ for(let i=0;i<p.days;i++){for(let c of cats)localStorage.removeItem(key(p,c,i));localStorage.removeItem(noteKey(p,i))}
+ render()
+}
 init();if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 </script></body></html>
