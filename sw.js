@@ -1,4 +1,4 @@
-const CACHE = 'mis-finanzas-v10-reset';
+const CACHE = 'index_finanzas_v5';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
