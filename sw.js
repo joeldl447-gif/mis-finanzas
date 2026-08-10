@@ -2,7 +2,7 @@ const CACHE = "mis-finanzas-v3";
 
 const ARCHIVOS = [
   "./",
-  "./índice.html",
+  "./index.html",
   "./manifest.json",
   "./icono.svg"
 ];
