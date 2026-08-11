@@ -108,10 +108,11 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
  .tab{padding:11px 16px}
 }
 
-html,body{overflow-x:hidden}
-body{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.tabs{touch-action:pan-x pan-y;overscroll-behavior-x:contain}
-.day-carousel{touch-action:pan-x pan-y;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+html,body{overflow-x:hidden;overflow-y:auto}
+body{-webkit-overflow-scrolling:touch}
+.tabs{touch-action:pan-x;overscroll-behavior-x:contain}
+.day-carousel{touch-action:pan-y;overscroll-behavior-x:contain;overscroll-behavior-y:auto;cursor:grab}
+.day-carousel.dragging{cursor:grabbing;scroll-snap-type:none}
 .tab{border-color:var(--line);background:var(--card2);color:var(--text)}
 .tab.active{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--card))}
 input[type=number],.text-input,textarea{background:var(--card);border-color:var(--line);color:var(--text)}
@@ -193,18 +194,38 @@ function render(){
   const d=document.createElement('section');d.className='day';
   d.innerHTML='<div class="day-head"><h2>'+cap(dayText(s))+' '+dateText(s)+'</h2><span class="day-count">'+(i+1)+'/'+p.days+'</span></div>'+
    '<div class="section-title in">Ingresos</div>'+income.map(c=>row(names[c],c,i)).join('')+
-   '<div class="total green">Total ingresos: '+money(inc)+'</div>'+
+   '<div class="total green" data-day-income="'+i+'">Total ingresos: '+money(inc)+'</div>'+
    '<div class="section-title out">Gastos</div>'+expenses.map(c=>row(names[c],c,i)).join('')+
-   '<div class="total red">Total gastos: '+money(g)+'</div>'+
+   '<div class="total red" data-day-expense="'+i+'">Total gastos: '+money(g)+'</div>'+
    '<div class="notes"><label>Notas del día</label><textarea id="note'+i+'" placeholder="Anotá algo sobre este día...">'+esc(localStorage.getItem(nk(p,i))||'')+'</textarea></div>'+
-   '<div class="day-balance">Saldo del día: <b>'+money(inc-g)+'</b></div><div class="pixel-line"></div>';
+   '<div class="day-balance" data-day-balance="'+i+'">Saldo del día: <b>'+money(inc-g)+'</b></div><div class="pixel-line"></div>';
   box.appendChild(d);
  }
  box.querySelectorAll('input[data-key]').forEach(e=>e.addEventListener('input',e=>{
-   localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);render();
+   localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);
+   refreshTotalsOnly();
  }));
  box.querySelectorAll('textarea').forEach((e,i)=>e.addEventListener('input',()=>localStorage.setItem(nk(p,i),e.value)));
  dots();
+}
+function refreshTotalsOnly(){
+ const p=current(); if(!p)return;
+ const t=totals(p);
+ document.getElementById('heroBalance').textContent=money(t.b);
+ document.getElementById('heroIncome').textContent=money(t.inc);
+ document.getElementById('heroExpense').textContent=money(t.g);
+ const box=document.getElementById('days');
+ for(let i=0;i<p.days;i++){
+   const inc=income.reduce((a,c)=>a+val(p,c,i),0);
+   const g=expenses.reduce((a,c)=>a+val(p,c,i),0);
+   const ie=box.querySelector('[data-day-income=\"'+i+'\"]');
+   const ge=box.querySelector('[data-day-expense=\"'+i+'\"]');
+   const be=box.querySelector('[data-day-balance=\"'+i+'\"] b');
+   if(ie)ie.textContent='Total ingresos: '+money(inc);
+   if(ge)ge.textContent='Total gastos: '+money(g);
+   if(be)be.textContent=money(inc-g);
+ }
+ if(document.getElementById('analysis')?.classList.contains('show'))renderAnalysis();
 }
 function row(label,c,i){
  return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
@@ -266,6 +287,28 @@ function createPeriod(){let s=document.getElementById('newDate').value,n=Math.ma
 function openPeriod(id){state.current=id;save();document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));render();window.scrollTo(0,0)}
 function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('fin_theme',document.body.classList.contains('dark')?'dark':'light');}
 render();
+
+// Smooth horizontal day swipe without stealing vertical page scrolling.
+(function(){
+ const box=document.getElementById('days'); if(!box)return;
+ let down=false,startX=0,startY=0,startScroll=0,horizontal=false,pid=null;
+ box.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse' && e.button!==0)return;
+   down=true;horizontal=false;pid=e.pointerId;startX=e.clientX;startY=e.clientY;startScroll=box.scrollLeft;
+   box.setPointerCapture?.(pid);
+ },{passive:true});
+ box.addEventListener('pointermove',e=>{
+   if(!down)return;
+   const dx=e.clientX-startX,dy=e.clientY-startY;
+   if(!horizontal && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.15){
+     horizontal=true;box.classList.add('dragging');e.preventDefault();
+   }
+   if(horizontal){e.preventDefault();box.scrollLeft=startScroll-dx;}
+ },{passive:false});
+ const end=()=>{down=false;horizontal=false;box.classList.remove('dragging');};
+ box.addEventListener('pointerup',end,{passive:true});
+ box.addEventListener('pointercancel',end,{passive:true});
+})();
 </script>
 </body>
 </html>
