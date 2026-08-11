@@ -153,6 +153,8 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
    <button class="tab" onclick="panel('search')">Buscar</button>
    <button class="tab" onclick="panel('deudas')">Deudas</button>
    <button class="tab" onclick="exportData()">Exportar</button>
+   <button class="tab" onclick="document.getElementById('importFile').click()">Importar</button>
+   <input id="importFile" type="file" accept="application/json,.json" style="display:none" onchange="importData(event)">
    <button class="tab" onclick="toggleDark()">☾</button>
  </nav>
 
@@ -508,6 +510,38 @@ function exportData(){
  a.href=url; a.download='mis-finanzas-backup-'+stamp+'.json';
  document.body.appendChild(a); a.click(); a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadBackupObject(data,filename){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a'); a.href=url; a.download=filename;
+ document.body.appendChild(a); a.click(); a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function getBackupData(){
+ const data={app:'Mis Finanzas',version:'v6',exportedAt:new Date().toISOString(),localStorage:{}};
+ for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('fin_'))data.localStorage[key]=localStorage.getItem(key)}
+ return data;
+}
+function importData(event){
+ const file=event.target.files&&event.target.files[0]; if(!file)return;
+ const reader=new FileReader();
+ reader.onload=function(){
+   try{
+     const data=JSON.parse(reader.result);
+     if(!data || data.app!=='Mis Finanzas' || !data.localStorage || typeof data.localStorage!=='object') throw new Error('invalid');
+     const backup=getBackupData();
+     const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+     downloadBackupObject(backup,'mis-finanzas-backup-antes-de-importar-'+stamp+'.json');
+     if(!confirm('Se hizo una copia de seguridad de tus datos actuales. ¿Querés reemplazarlos por este respaldo?')){event.target.value='';return}
+     for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key&&key.startsWith('fin_'))localStorage.removeItem(key)}
+     Object.keys(data.localStorage).forEach(key=>{if(key.startsWith('fin_'))localStorage.setItem(key,String(data.localStorage[key]))});
+     alert('Datos importados correctamente.');
+     event.target.value='';
+     location.reload();
+   }catch(e){event.target.value='';alert('El archivo no parece ser un respaldo válido de Mis Finanzas.')}
+ };
+ reader.readAsText(file);
 }
 // Migración única: las compras marcadas como anotadas pasan a una cuenta independiente y dejan de afectar los gastos del período.
 if(localStorage.getItem('fin_chino_migrated_v2')!=='1'){
