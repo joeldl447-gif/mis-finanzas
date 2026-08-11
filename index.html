@@ -99,7 +99,8 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 .history-item{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:12px 0}
 .small{font-size:12px;color:var(--muted)}
 .search{display:flex;gap:8px}.search input{text-align:left}
-.chino-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.chino-row{padding:12px 0;border-bottom:1px solid var(--line)}
+.chino-note{width:100%;margin-top:5px;min-height:58px;resize:vertical}
 .finance-box{display:grid;gap:12px;margin-top:16px}.finance-box .card{padding:16px}.finance-input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px}
 @media(max-width:520px){
  .app{padding:18px 14px 35px}
@@ -196,7 +197,7 @@ function render(){
  const p=current();if(!p)return;
  document.getElementById('period').textContent=dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+' · '+p.days+' días';
  const t=totals(p);document.getElementById('heroBalance').textContent=money(t.b);document.getElementById('heroIncome').textContent=money(t.inc);document.getElementById('heroExpense').textContent=money(t.g);
- const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';setupDaySwipe();
+ const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';
  for(let i=0;i<p.days;i++){
   let s=dateAdd(p.start,i),inc=income.reduce((a,c)=>a+val(p,c,i),0),g=expenses.reduce((a,c)=>a+val(p,c,i),0);
   const d=document.createElement('section');d.className='day';
@@ -236,6 +237,7 @@ function refreshTotalsOnly(){
  if(document.getElementById('analysis')?.classList.contains('show'))renderAnalysis();
 }
 function chinoKey(p,c,i){return 'fin_chino_'+p.id+'_'+c+'_'+i}
+function chinoNoteKey(p,c,i){return 'fin_chino_note_'+p.id+'_'+c+'_'+i}
 function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
 function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
 function row(label,c,i){
@@ -358,10 +360,13 @@ function renderChinoItems(){
  let a=[];
  for(const p of state.periods) for(let i=0;i<p.days;i++) for(const c of expenses) if(chinoMarked(p,c,i)){
    const v=val(p,c,i);
-   a.push('<div class="chino-row"><div><b>'+dateText(dateAdd(p.start,i))+'</b><div class="small">'+names[c]+'</div></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="'+v+'" data-chino-value="'+k(p,c,i)+'" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense(\''+chinoKey(p,c,i)+'\')">Quitar</button></div></div>');
+   const note=localStorage.getItem(chinoNoteKey(p,c,i))||'';
+   const key=chinoKey(p,c,i);
+   a.push(`<div class="chino-row" style="display:block"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><b>${dateText(dateAdd(p.start,i))}</b><div class="small">${names[c]}</div></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="${v}" data-chino-value="${k(p,c,i)}" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense('${key}')">Quitar</button></div></div><label style="display:block;margin-top:10px"><span class="small">Nota del día</span><textarea class="chino-note" rows="2" data-chino-note="${chinoNoteKey(p,c,i)}" placeholder="Anotá algo sobre esta compra..." oninput="saveChinoNoteLive(this)">${esc(note)}</textarea></label></div>`);
  }
  return a.length?a.join(''):'<p class="small">No tenés gastos anotados en el chino.</p>';
 }
+function saveChinoNoteLive(el){ localStorage.setItem(el.dataset.chinoNote,el.value); }
 function editChinoValueLive(el){
  const amount=Math.max(0,Number(el.value)||0);
  localStorage.setItem(el.dataset.chinoValue,String(amount));
@@ -398,7 +403,20 @@ function cobrarChino(){
  renderChino();
 }
 function renderHistory(){
- const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button></div>'}).join('');
+ const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><div class="actions" style="margin-top:0;flex-wrap:wrap"><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button><button class="secondary danger" onclick="deletePeriod('+p.id+')">Borrar</button></div></div>'}).join('');
+}
+function deletePeriod(id){
+ if(state.periods.length<=1){alert('No podés borrar el único período.');return;}
+ if(!confirm('¿Borrar este período y todos sus datos?'))return;
+ const p=state.periods.find(x=>x.id===id); if(!p)return;
+ for(let i=0;i<p.days;i++){
+   for(const c of [...income,...expenses]) localStorage.removeItem(k(p,c,i));
+   localStorage.removeItem(nk(p,i));
+   for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
+ }
+ state.periods=state.periods.filter(x=>x.id!==id);
+ if(state.current===id) state.current=state.periods[state.periods.length-1].id;
+ save(); renderHistory(); render();
 }
 function renderSearch(){
  document.getElementById('search').innerHTML='<h2>Buscar</h2><div class="search"><input id="q" placeholder="SUBE, cine, supermercado..." oninput="doSearch()"><button class="secondary" onclick="document.getElementById(\'q\').value=\'\';doSearch()">Limpiar</button></div><div id="results"></div>';
