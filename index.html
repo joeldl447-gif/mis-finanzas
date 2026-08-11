@@ -45,7 +45,7 @@ h1{font-size:29px;line-height:1;margin:0;font-weight:700;letter-spacing:-.7px}
 }
 .tab.active{border-color:#78b94c;color:var(--green);background:#142016}
 .content{position:relative}
-.day-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;scrollbar-width:none}
+.dayWindow{overflow:hidden;width:100%;touch-action:auto}.day-carousel{display:flex;gap:14px;scrollbar-width:none;touch-action:auto}
 .day-carousel::-webkit-scrollbar{display:none}
 .day{
  flex:0 0 100%;scroll-snap-align:start;background:var(--card);
@@ -111,7 +111,6 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 html,body{overflow-x:hidden;overflow-y:auto}
 body{-webkit-overflow-scrolling:touch}
 .tabs{touch-action:pan-x pan-y;overscroll-behavior-x:contain}
-.day-carousel{touch-action:pan-x pan-y;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
 .tab{border-color:var(--line);background:var(--card2);color:var(--text)}
 .tab.active{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--card))}
 input[type=number],.text-input,textarea{background:var(--card);border-color:var(--line);color:var(--text)}
@@ -143,7 +142,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
    <button class="tab" onclick="toggleDark()">☾</button>
  </nav>
 
- <div id="days"></div>
+ <div id="dayWindow"><div id="days"></div></div>
  <div id="dots" class="swipe"></div>
 
  <section id="summary" class="panel"></section>
@@ -187,7 +186,7 @@ function render(){
  const p=current();if(!p)return;
  document.getElementById('period').textContent=dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+' · '+p.days+' días';
  const t=totals(p);document.getElementById('heroBalance').textContent=money(t.b);document.getElementById('heroIncome').textContent=money(t.inc);document.getElementById('heroExpense').textContent=money(t.g);
- const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';
+ const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';setupDaySwipe();
  for(let i=0;i<p.days;i++){
   let s=dateAdd(p.start,i),inc=income.reduce((a,c)=>a+val(p,c,i),0),g=expenses.reduce((a,c)=>a+val(p,c,i),0);
   const d=document.createElement('section');d.className='day';
@@ -235,6 +234,26 @@ function dots(){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+let daySwipeX=0,daySwipeY=0,daySwipeActive=false,dayIndex=0;
+function setupDaySwipe(){
+ const box=document.getElementById('days');
+ if(!box||box.dataset.swipeReady)return;
+ box.dataset.swipeReady='1';
+ box.addEventListener('touchstart',e=>{
+   if(e.touches.length!==1)return;
+   daySwipeX=e.touches[0].clientX; daySwipeY=e.touches[0].clientY; daySwipeActive=true;
+ },{passive:true});
+ box.addEventListener('touchend',e=>{
+   if(!daySwipeActive)return;
+   daySwipeActive=false;
+   const t=e.changedTouches[0],dx=t.clientX-daySwipeX,dy=t.clientY-daySwipeY;
+   if(Math.abs(dx)<55 || Math.abs(dx)<=Math.abs(dy))return;
+   const p=current(); if(!p)return;
+   dayIndex=Math.max(0,Math.min(p.days-1,dayIndex+(dx<0?1:-1)));
+   box.style.transform='translate3d(calc(-'+dayIndex+' * (100% + 14px)),0,0)';
+   document.querySelectorAll('#dots .dot').forEach((d,i)=>d.classList.toggle('active',i===dayIndex));
+ },{passive:true});
+}
 function showDays(){
  document.getElementById('days').style.display='';
  document.getElementById('dots').style.display='';
