@@ -9,6 +9,11 @@
 <title>Mis Finanzas</title>
 <style>
 :root{
+ --bg:#f5f5f5;--card:#ffffff;--card2:#f0f0f0;--line:#d9d9d9;
+ --text:#202020;--muted:#707070;--green:#4f8f2f;--green2:#3f7425;
+ --red:#c94d4d;--yellow:#a87916;--shadow:0 4px 18px #0002;
+}
+body.dark{
  --bg:#080c0a;--card:#111815;--card2:#151d19;--line:#28332e;
  --text:#e7eee9;--muted:#8c9891;--green:#9be85c;--green2:#5b9d31;
  --red:#ed6b6b;--yellow:#e7bd55;--shadow:0 8px 28px #0007;
@@ -103,15 +108,18 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
  .tab{padding:11px 16px}
 }
 
-.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:18px}
-.pie-chart{width:240px;height:240px;border-radius:50%;background:conic-gradient(#7ee34f 0deg 360deg);position:relative;box-shadow:0 0 0 1px var(--line)}
-.pie-chart::after{content:'';position:absolute;inset:58px;border-radius:50%;background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
-.pie-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;font-size:13px;color:var(--muted)}
-.pie-center b{font-size:20px;color:var(--text);margin-top:3px}
-.pie-legend{width:100%;display:grid;gap:8px}
-.pie-item{display:grid;grid-template-columns:12px 1fr auto auto;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-.pie-dot{width:12px;height:12px;border-radius:3px}
-.pie-name{font-weight:600}.pie-percent{color:var(--muted);font-size:13px}.pie-value{font-weight:600}
+html,body{overflow-x:hidden}
+body{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tabs{touch-action:pan-x;overscroll-behavior-x:contain}
+.day-carousel{touch-action:pan-x;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
+.tab{border-color:var(--line);background:var(--card2);color:var(--text)}
+.tab.active{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--card))}
+input[type=number],.text-input,textarea{background:var(--card);border-color:var(--line);color:var(--text)}
+.panel,.day{border-color:var(--line)}
+
+.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:18px}.pie-chart{width:230px;height:230px;border-radius:50%;display:grid;place-items:center}.pie-center{width:105px;height:105px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center}.pie-center span{font-size:12px;color:var(--muted)}.pie-center b{font-size:18px}.pie-legend{width:100%;display:grid;gap:8px}.pie-item{display:grid;grid-template-columns:14px 1fr auto;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.pie-dot{width:12px;height:12px;border-radius:50%}
+:root{--pie-comida:#5b8ff9;--pie-transporte:#61c0bf;--pie-casa:#7b6fd0;--pie-pareja:#e67e9e;--pie-ocio:#e7b84b;--pie-otros:#9aa0a6}
+body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie-pareja:#e98dab;--pie-ocio:#e5bd55;--pie-otros:#9ca3af}
 </style>
 </head>
 <body>
@@ -234,18 +242,13 @@ function renderBudget(){
 }
 function renderAnalysis(){
  const p=current(),t=totals(p),prev=state.periods.filter(x=>x.id!==p.id).sort((a,b)=>b.id-a.id)[0],pt=prev?totals(prev):null;
- const vals=expenses.map(c=>({c,v:periodCat(p,c)}));
- const total=vals.reduce((a,x)=>a+x.v,0);
+ const vals=expenses.map(c=>({c,v:periodCat(p,c)})).filter(x=>x.v>0),total=vals.reduce((a,x)=>a+x.v,0);
  let deg=0;
- const colors=['#7ee34f','#f4c542','#49b6ff','#a78bfa','#ff6b6b','#f59e0b','#9ca3af'];
- const stops=vals.map((x,i)=>{const start=deg;deg+=total?x.v/total*360:0;return colors[i]+' '+start+'deg '+deg+'deg'}).join(',');
- const max=vals.reduce((a,x)=>x.v>a.v?x:a,vals[0]);
- document.getElementById('analysis').innerHTML='<h2>Análisis</h2>'+
-  '<div class="cards">'+card('Mayor gasto',max&&max.v?names[max.c]:'Sin gastos','green')+card('Total gastos',money(total),'red')+'</div>'+
-  '<div class="pie-wrap"><div class="pie-chart" style="background:conic-gradient('+(total?stops:'#27302c 0deg 360deg')+')"><div class="pie-center"><span>Total</span><b>'+money(total)+'</b></div></div>'+
-  '<div class="pie-legend">'+vals.map((x,i)=>'<div class="pie-item"><span class="pie-dot" style="background:'+colors[i]+'"></span><span class="pie-name">'+names[x.c]+'</span><span class="pie-percent">'+(total?Math.round(x.v/total*100):0)+'%</span><span class="pie-value">'+money(x.v)+'</span></div>').join('')+'</div></div>'+
-  '<div style="margin-top:22px"><h3>Comparación</h3>'+(pt?'<p>Período anterior: <b>'+money(pt.g)+'</b> en gastos.</p><p>Período actual: <b>'+money(t.g)+'</b>.</p><p style="color:'+(t.g<=pt.g?'var(--green)':'var(--red)')+'">'+(t.g<=pt.g?'Gastaste menos que en el período anterior.':'Gastaste más que en el período anterior.')+'</p>':'<p class="small">Cuando tengas otro período podremos compararlos.</p>')+'</div>';
+ const stops=vals.map(x=>{const a=deg;deg+=total?x.v/total*360:0;return 'var(--pie-'+x.c+') '+a+'deg '+deg+'deg'}).join(',');
+ const max=vals.reduce((a,x)=>!a||x.v>a.v?x:a,null);
+ document.getElementById('analysis').innerHTML='<h2>Análisis</h2><div class="cards">'+card('Mayor gasto',max?names[max.c]:'Sin gastos','green')+card('Total gastos',money(total),'red')+'</div>'+ '<div class="pie-wrap"><div class="pie-chart" style="background:'+(total?'conic-gradient('+stops+')':'var(--card2)')+'"><div class="pie-center"><span>Total</span><b>'+money(total)+'</b></div></div>'+ '<div class="pie-legend">'+(vals.length?vals.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:var(--pie-'+x.c+')"></span><span>'+names[x.c]+'</span><b>'+Math.round(x.v/total*100)+'% · '+money(x.v)+'</b></div>').join(''):'<div class="small">Todavía no hay gastos registrados.</div>')+'</div></div>'+ '<div style="margin-top:18px"><h3>Comparación</h3>'+(pt?'<p>Período anterior: <b>'+money(pt.g)+'</b> en gastos.</p><p>Período actual: <b>'+money(t.g)+'</b>.</p><p style="color:'+(t.g<=pt.g?'var(--green)':'var(--red)')+'">'+(t.g<=pt.g?'Gastaste menos que en el período anterior.':'Gastaste más que en el período anterior.')+'</p>':'<p class="small">Cuando tengas otro período podremos compararlos.</p>')+'</div>';
 }
+
 function renderHistory(){
  const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button></div>'}).join('');
 }
@@ -261,7 +264,7 @@ function newPeriod(){document.getElementById('newDate').value=new Date().toISOSt
 function closeModal(){document.getElementById('newModal').classList.remove('show')}
 function createPeriod(){let s=document.getElementById('newDate').value,n=Math.max(1,Math.min(366,Number(document.getElementById('newLen').value)||15));let p={id:state.nextId++,start:s,days:n};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
 function openPeriod(id){state.current=id;save();document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));render();window.scrollTo(0,0)}
-function toggleDark(){document.body.classList.toggle('light');}
+function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('fin_theme',document.body.classList.contains('dark')?'dark':'light');}
 render();
 </script>
 </body>
