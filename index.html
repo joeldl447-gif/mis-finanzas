@@ -110,9 +110,8 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 
 html,body{overflow-x:hidden;overflow-y:auto}
 body{-webkit-overflow-scrolling:touch}
-.tabs{touch-action:pan-x;overscroll-behavior-x:contain}
-.day-carousel{touch-action:pan-y;overscroll-behavior-x:contain;overscroll-behavior-y:auto;cursor:grab}
-.day-carousel.dragging{cursor:grabbing;scroll-snap-type:none}
+.tabs{touch-action:pan-x pan-y;overscroll-behavior-x:contain}
+.day-carousel{touch-action:pan-x pan-y;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
 .tab{border-color:var(--line);background:var(--card2);color:var(--text)}
 .tab.active{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--card))}
 input[type=number],.text-input,textarea{background:var(--card);border-color:var(--line);color:var(--text)}
@@ -236,9 +235,22 @@ function dots(){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function panel(id){
+function showDays(){
+ document.getElementById('days').style.display='';
+ document.getElementById('dots').style.display='';
  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ const first=document.querySelector('.tab'); if(first) first.classList.add('active');
+}
+function panel(id){
+ document.getElementById('days').style.display='none';
+ document.getElementById('dots').style.display='none';
+ document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  const e=document.getElementById(id);e.classList.add('show');
+ const tabs=[...document.querySelectorAll('.tab')];
+ const ids=['summary','history','total','budget','analysis','search'];
+ const idx=ids.indexOf(id); if(idx>=0 && tabs[idx+1]) tabs[idx+1].classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
  if(id==='budget')renderBudget();
  if(id==='analysis')renderAnalysis();
@@ -281,34 +293,15 @@ function doSearch(){
  let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++){let n=localStorage.getItem(nk(p,i))||'';if(n.toLowerCase().includes(q))a.push('<div class="category"><div>📝</div><div><b>'+dateText(dateAdd(p.start,i))+'</b><div class="cat-sub">'+esc(n)+'</div></div></div>')}
  r.innerHTML=a.length?a.join(''):'<p class="small">No encontré coincidencias.</p>';
 }
-function newPeriod(){document.getElementById('newDate').value=new Date().toISOString().slice(0,10);document.getElementById('newLen').value=15;document.getElementById('newModal').classList.add('show')}
+function newPeriod(){showDays();document.getElementById('newDate').value=new Date().toISOString().slice(0,10);document.getElementById('newLen').value=15;document.getElementById('newModal').classList.add('show')}
 function closeModal(){document.getElementById('newModal').classList.remove('show')}
 function createPeriod(){let s=document.getElementById('newDate').value,n=Math.max(1,Math.min(366,Number(document.getElementById('newLen').value)||15));let p={id:state.nextId++,start:s,days:n};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
-function openPeriod(id){state.current=id;save();document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));render();window.scrollTo(0,0)}
+function openPeriod(id){state.current=id;save();showDays();render();window.scrollTo(0,0)}
 function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('fin_theme',document.body.classList.contains('dark')?'dark':'light');}
+showDays();
 render();
 
-// Smooth horizontal day swipe without stealing vertical page scrolling.
-(function(){
- const box=document.getElementById('days'); if(!box)return;
- let down=false,startX=0,startY=0,startScroll=0,horizontal=false,pid=null;
- box.addEventListener('pointerdown',e=>{
-   if(e.pointerType==='mouse' && e.button!==0)return;
-   down=true;horizontal=false;pid=e.pointerId;startX=e.clientX;startY=e.clientY;startScroll=box.scrollLeft;
-   box.setPointerCapture?.(pid);
- },{passive:true});
- box.addEventListener('pointermove',e=>{
-   if(!down)return;
-   const dx=e.clientX-startX,dy=e.clientY-startY;
-   if(!horizontal && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.15){
-     horizontal=true;box.classList.add('dragging');e.preventDefault();
-   }
-   if(horizontal){e.preventDefault();box.scrollLeft=startScroll-dx;}
- },{passive:false});
- const end=()=>{down=false;horizontal=false;box.classList.remove('dragging');};
- box.addEventListener('pointerup',end,{passive:true});
- box.addEventListener('pointercancel',end,{passive:true});
-})();
+// Native touch scrolling: no pointer capture or preventDefault.
 </script>
 </body>
 </html>
