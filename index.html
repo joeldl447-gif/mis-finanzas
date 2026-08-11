@@ -124,6 +124,11 @@ input[type=number],.text-input,textarea{background:var(--card);border-color:var(
 .pie-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:18px}.pie-chart{width:230px;height:230px;border-radius:50%;display:grid;place-items:center}.pie-center{width:105px;height:105px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center}.pie-center span{font-size:12px;color:var(--muted)}.pie-center b{font-size:18px}.pie-legend{width:100%;display:grid;gap:8px}.pie-item{display:grid;grid-template-columns:14px 1fr auto;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.pie-dot{width:12px;height:12px;border-radius:50%}
 :root{--pie-comida:#5b8ff9;--pie-transporte:#61c0bf;--pie-casa:#7b6fd0;--pie-pareja:#e67e9e;--pie-ocio:#e7b84b;--pie-otros:#9aa0a6}
 body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie-pareja:#e98dab;--pie-ocio:#e5bd55;--pie-otros:#9ca3af}
+
+.deuda-note{margin:10px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.deuda-note textarea{width:100%;min-height:90px;resize:vertical;text-align:left}
+.deuda-actions{display:flex;gap:8px;margin-top:10px}
+.deuda-actions button{flex:1}
 </style>
 </head>
 <body>
@@ -146,6 +151,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
    <button class="tab" onclick="panel('chino')">Cuenta chino</button>
    <button class="tab" onclick="panel('analysis')">Análisis</button>
    <button class="tab" onclick="panel('search')">Buscar</button>
+   <button class="tab" onclick="panel('deudas')">Deudas</button>
    <button class="tab" onclick="toggleDark()">☾</button>
  </nav>
 
@@ -163,6 +169,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
  <section id="analysis" class="panel"></section>
  <section id="history" class="panel"></section>
  <section id="search" class="panel"></section>
+ <section id="deudas" class="panel"></section>
 </div>
 
 <div id="newModal" class="modal"><div class="modal-box">
@@ -312,7 +319,7 @@ function panel(id){
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  const e=document.getElementById(id);e.classList.add('show');
  const tabs=[...document.querySelectorAll('.tab')];
- const ids=['summary','history','total','budget','chino','analysis','search'];
+ const ids=['summary','history','total','budget','chino','analysis','search','deudas'];
  const idx=ids.indexOf(id); if(idx>=0 && tabs[idx+2]) tabs[idx+2].classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
  if(id==='budget')renderBudget();
@@ -320,6 +327,7 @@ function panel(id){
  if(id==='analysis')renderAnalysis();
  if(id==='history')renderHistory();
  if(id==='search')renderSearch();
+ if(id==='deudas')renderDeudas();
 }
 function renderSummary(){
  const p=current(),t=totals(p),el=document.getElementById('summary');el.innerHTML='<h2>Resumen del período</h2><div class="cards">'+
@@ -442,6 +450,19 @@ function deletePeriod(id){
  if(state.current===id) state.current=state.periods[state.periods.length-1].id;
  save(); renderHistory(); render();
 }
+const DEUDAS_KEY='fin_deudas_notes_v1';
+function getDeudaNotes(){try{return JSON.parse(localStorage.getItem(DEUDAS_KEY)||'[]')}catch(e){return []}}
+function saveDeudaNotes(a){localStorage.setItem(DEUDAS_KEY,JSON.stringify(a))}
+function renderDeudas(){
+ const el=document.getElementById('deudas'),notes=getDeudaNotes();
+ el.innerHTML='<h2>Deudas</h2><p class="small">Esta sección es solamente para anotar y recordar deudas. No afecta ingresos, gastos, saldos ni presupuestos.</p>'+
+   '<button class="primary" onclick="addDeudaNote()" style="width:100%;margin-bottom:10px">+ Nueva nota</button>'+
+   (notes.length?notes.map((n,i)=>'<div class="deuda-note"><textarea data-deuda="'+i+'" placeholder="Escribí una deuda o recordatorio...">'+esc(n)+'</textarea><div class="deuda-actions"><button class="secondary" onclick="saveDeudaNote('+i+',this)">Guardar</button><button class="secondary danger" onclick="deleteDeudaNote('+i+')">Borrar</button></div></div>').join(''):'<p class="small">Todavía no tenés notas de deudas.</p>');
+}
+function addDeudaNote(){const a=getDeudaNotes();a.push('');saveDeudaNotes(a);renderDeudas();setTimeout(()=>{const xs=document.querySelectorAll('#deudas textarea');if(xs.length)xs[xs.length-1].focus()},50)}
+function saveDeudaNote(i,btn){const ta=document.querySelector('#deudas textarea[data-deuda="'+i+'"]');if(!ta)return;const a=getDeudaNotes();a[i]=ta.value;saveDeudaNotes(a);btn.textContent='Guardado';setTimeout(()=>btn.textContent='Guardar',800)}
+function deleteDeudaNote(i){const a=getDeudaNotes();a.splice(i,1);saveDeudaNotes(a);renderDeudas()}
+
 function renderSearch(){
  document.getElementById('search').innerHTML='<h2>Buscar</h2><div class="search"><input id="q" placeholder="SUBE, cine, supermercado..." oninput="doSearch()"><button class="secondary" onclick="document.getElementById(\'q\').value=\'\';doSearch()">Limpiar</button></div><div id="results"></div>';
 }
