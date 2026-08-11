@@ -99,6 +99,10 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 .history-item{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding:12px 0}
 .small{font-size:12px;color:var(--muted)}
 .search{display:flex;gap:8px}.search input{text-align:left}
+.chino-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.chino-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.chino-check input{width:18px;height:18px}
+.finance-box{display:grid;gap:12px;margin-top:16px}.finance-box .card{padding:16px}.finance-input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px}
 @media(max-width:520px){
  .app{padding:18px 14px 35px}
  h1{font-size:28px}.hero{padding:21px 22px;border-radius:23px}
@@ -137,6 +141,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
    <button class="tab" onclick="panel('history')">Historial</button>
    <button class="tab" onclick="panel('total')">Total período</button>
    <button class="tab" onclick="panel('budget')">Presupuesto</button>
+   <button class="tab" onclick="panel('chino')">Cuenta chino</button>
    <button class="tab" onclick="panel('analysis')">Análisis</button>
    <button class="tab" onclick="panel('search')">Buscar</button>
    <button class="tab" onclick="toggleDark()">☾</button>
@@ -148,6 +153,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
  <section id="summary" class="panel"></section>
  <section id="total" class="panel"></section>
  <section id="budget" class="panel"></section>
+ <section id="chino" class="panel"></section>
  <section id="analysis" class="panel"></section>
  <section id="history" class="panel"></section>
  <section id="search" class="panel"></section>
@@ -203,6 +209,7 @@ function render(){
    localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);
    refreshTotalsOnly();
  }));
+ box.querySelectorAll('input[data-chino]').forEach(e=>e.addEventListener('change',()=>{localStorage.setItem(e.target.dataset.chino,e.target.checked?'1':'0');renderChino();}));
  box.querySelectorAll('textarea').forEach((e,i)=>e.addEventListener('input',()=>localStorage.setItem(nk(p,i),e.value)));
  dots();
 }
@@ -225,8 +232,13 @@ function refreshTotalsOnly(){
  }
  if(document.getElementById('analysis')?.classList.contains('show'))renderAnalysis();
 }
+function chinoKey(p,c,i){return 'fin_chino_'+p.id+'_'+c+'_'+i}
+function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
+function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
 function row(label,c,i){
- return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
+ const checked=chinoMarked(current(),c,i)?' checked':'';
+ const isExpense=expenses.includes(c);
+ return '<div class="row"><span>'+label+(isExpense?'<label class="chino-check"><input type="checkbox" data-chino="'+chinoKey(current(),c,i)+'"'+checked+'> Anotado en chino</label>':'')+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
 }
 function dots(){
  const p=current(),d=document.getElementById('dots');d.innerHTML='';
@@ -268,10 +280,11 @@ function panel(id){
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  const e=document.getElementById(id);e.classList.add('show');
  const tabs=[...document.querySelectorAll('.tab')];
- const ids=['summary','history','total','budget','analysis','search'];
+ const ids=['summary','history','total','budget','chino','analysis','search'];
  const idx=ids.indexOf(id); if(idx>=0 && tabs[idx+1]) tabs[idx+1].classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
  if(id==='budget')renderBudget();
+ if(id==='chino')renderChino();
  if(id==='analysis')renderAnalysis();
  if(id==='history')renderHistory();
  if(id==='search')renderSearch();
@@ -301,6 +314,22 @@ function renderAnalysis(){
  document.getElementById('analysis').innerHTML='<h2>Análisis</h2><div class="cards">'+card('Mayor gasto',max?names[max.c]:'Sin gastos','green')+card('Total gastos',money(total),'red')+'</div>'+ '<div class="pie-wrap"><div class="pie-chart" style="background:'+(total?'conic-gradient('+stops+')':'var(--card2)')+'"><div class="pie-center"><span>Total</span><b>'+money(total)+'</b></div></div>'+ '<div class="pie-legend">'+(vals.length?vals.map(x=>'<div class="pie-item"><span class="pie-dot" style="background:var(--pie-'+x.c+')"></span><span>'+names[x.c]+'</span><b>'+Math.round(x.v/total*100)+'% · '+money(x.v)+'</b></div>').join(''):'<div class="small">Todavía no hay gastos registrados.</div>')+'</div></div>'+ '<div style="margin-top:18px"><h3>Comparación</h3>'+(pt?'<p>Período anterior: <b>'+money(pt.g)+'</b> en gastos.</p><p>Período actual: <b>'+money(t.g)+'</b>.</p><p style="color:'+(t.g<=pt.g?'var(--green)':'var(--red)')+'">'+(t.g<=pt.g?'Gastaste menos que en el período anterior.':'Gastaste más que en el período anterior.')+'</p>':'<p class="small">Cuando tengas otro período podremos compararlos.</p>')+'</div>';
 }
 
+function renderChino(){
+ const debt=chinoDebt();
+ const pay=Number(localStorage.getItem('fin_chino_pay')||250000);
+ const net=Math.max(0,pay-debt);
+ document.getElementById('chino').innerHTML='<h2>Cuenta del chino</h2>'+
+ '<div class="cards">'+card('Anotado actualmente',money(debt),'red')+card('Cobro quincenal',money(pay),'green')+card('Cobro después del descuento',money(net),'green')+'</div>'+
+ '<div class="finance-box"><div class="card"><label><b>Cobro quincenal</b></label><input class="finance-input" type="number" min="0" value="'+pay+'" onchange="saveChinoPay(this.value)"></div>'+
+ '<div class="actions"><button class="primary" onclick="cobrarChino()">Registrar cobro y descontar cuenta</button></div>'+ '<p class="small">Cuando cargues un gasto en los días y marques “Anotado en chino”, ese gasto se mantiene en su categoría y además se suma a esta cuenta. Al cobrar, el monto anotado se descuenta del sueldo.</p>'+
+ '<h3>Gastos anotados</h3>'+renderChinoItems()+'</div>';
+}
+function renderChinoItems(){
+ let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i)){const v=val(p,c,i);if(v>0)a.push('<div class="chino-row"><span>'+dateText(dateAdd(p.start,i))+' · '+names[c]+'</span><b>'+money(v)+'</b></div>')}
+ return a.length?a.join(''):'<p class="small">No tenés gastos anotados en el chino.</p>';
+}
+function saveChinoPay(v){localStorage.setItem('fin_chino_pay',String(Number(v)||0));renderChino();}
+function cobrarChino(){for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)localStorage.removeItem(chinoKey(p,c,i));renderChino();}
 function renderHistory(){
  const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button></div>'}).join('');
 }
