@@ -45,7 +45,7 @@ h1{font-size:29px;line-height:1;margin:0;font-weight:700;letter-spacing:-.7px}
 }
 .tab.active{border-color:#78b94c;color:var(--green);background:#142016}
 .content{position:relative}
-.day-stage{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:4px}.day-arrow{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:var(--card2);color:var(--text);font-size:30px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.day-arrow:disabled{opacity:.28;cursor:default}.dayWindow{overflow:hidden;width:100%;touch-action:auto}.day-carousel{display:flex;gap:14px;scrollbar-width:none;touch-action:auto}
+.day-stage{position:relative;width:100%;}.day-arrow{position:absolute;top:34px;z-index:10;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:var(--card2);color:var(--text);font-size:30px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.08)}.day-arrow.left{left:4px}.day-arrow.right{right:4px}.day-arrow:disabled{opacity:.28;cursor:default}.dayWindow{overflow:hidden;width:100%;touch-action:auto}.day-carousel{display:flex;gap:0;width:100%;scrollbar-width:none;touch-action:auto}.day-carousel .day{flex:0 0 100%;width:100%;min-width:0}
 .day-carousel::-webkit-scrollbar{display:none}
 .day{
  flex:0 0 100%;scroll-snap-align:start;background:var(--card);
@@ -114,7 +114,7 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 html,body{overflow-x:hidden;overflow-y:auto}
 body{-webkit-overflow-scrolling:touch}
 .tabs{touch-action:pan-x pan-y;overscroll-behavior-x:contain}
-.day-stage{grid-template-columns:36px minmax(0,1fr) 36px}.day-arrow{width:34px;height:34px;font-size:27px}
+.day-arrow{width:38px;height:38px;font-size:27px;top:34px}
 .tab{border-color:var(--line);background:var(--card2);color:var(--text)}
 .tab.active{border-color:var(--green);color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--card))}
 input[type=number],.text-input,textarea{background:var(--card);border-color:var(--line);color:var(--text)}
@@ -238,6 +238,7 @@ function refreshTotalsOnly(){
 }
 function chinoKey(p,c,i){return 'fin_chino_'+p.id+'_'+c+'_'+i}
 function chinoNoteKey(p,c,i){return 'fin_chino_note_'+p.id+'_'+c+'_'+i}
+function chinoDayNoteKey(p,i){return 'fin_chino_day_note_'+p.id+'_'+i}
 function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
 function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
 function row(label,c,i){
@@ -265,7 +266,7 @@ function setupDaySwipe(){
    if(Math.abs(dx)<55 || Math.abs(dx)<=Math.abs(dy))return;
    const p=current(); if(!p)return;
    dayIndex=Math.max(0,Math.min(p.days-1,dayIndex+(dx<0?1:-1)));
-   box.style.transform='translate3d(calc(-'+dayIndex+' * (100% + 14px)),0,0)';
+   box.style.transform='translate3d(calc(-'+dayIndex+' * 100%),0,0)';
    document.querySelectorAll('#dots .dot').forEach((d,i)=>d.classList.toggle('active',i===dayIndex));
  },{passive:true});
 }
@@ -280,7 +281,7 @@ function goToDay(index){
  const p=current();if(!p)return;
  dayIndex=Math.max(0,Math.min(p.days-1,index));
  const box=document.getElementById('days');
- box.style.transform='translate3d(calc(-'+dayIndex+' * (100% + 14px)),0,0)';
+ box.style.transform='translate3d(calc(-'+dayIndex+' * 100%),0,0)';
  updateDayNav();
 }
 function prevDay(){goToDay(dayIndex-1)}
@@ -357,16 +358,26 @@ function chinoAddForm(){
  '<button class="primary" style="width:100%;margin-top:8px" onclick="addChinoExpense()">Agregar a la cuenta del chino</button>';
 }
 function renderChinoItems(){
- let a=[];
- for(const p of state.periods) for(let i=0;i<p.days;i++) for(const c of expenses) if(chinoMarked(p,c,i)){
-   const v=val(p,c,i);
-   const note=localStorage.getItem(chinoNoteKey(p,c,i))||'';
-   const key=chinoKey(p,c,i);
-   a.push(`<div class="chino-row" style="display:block"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><b>${dateText(dateAdd(p.start,i))}</b><div class="small">${names[c]}</div></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="${v}" data-chino-value="${k(p,c,i)}" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense('${key}')">Quitar</button></div></div><label style="display:block;margin-top:10px"><span class="small">Nota del día</span><textarea class="chino-note" rows="2" data-chino-note="${chinoNoteKey(p,c,i)}" placeholder="Anotá algo sobre esta compra..." oninput="saveChinoNoteLive(this)">${esc(note)}</textarea></label></div>`);
+ let groups=[];
+ for(const p of state.periods){
+  for(let i=0;i<p.days;i++){
+   const items=[];
+   for(const c of expenses) if(chinoMarked(p,c,i)){
+    const v=val(p,c,i);
+    items.push({c,v,key:chinoKey(p,c,i)});
+   }
+   if(items.length) groups.push({p,i,items,note:localStorage.getItem(chinoDayNoteKey(p,i))||''});
+  }
  }
- return a.length?a.join(''):'<p class="small">No tenés gastos anotados en el chino.</p>';
+ if(!groups.length) return '<p class="small">No tenés gastos anotados en el chino.</p>';
+ return groups.map(g=>`<div class="chino-day-group">
+   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h3 style="margin:0">${cap(dayText(dateAdd(g.p.start,g.i)))} ${dateText(dateAdd(g.p.start,g.i))}</h3><div class="small">${g.items.length} compra${g.items.length===1?'':'s'} anotada${g.items.length===1?'':'s'}</div></div><span class="day-count">${g.i+1}/${g.p.days}</span></div>
+   ${g.items.map(x=>`<div class="chino-row"><div><b>${names[x.c]}</b></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="${x.v}" data-chino-value="${x.key}" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense('${x.key}')">Quitar</button></div></div>`).join('')}
+   <label style="display:block;margin-top:12px"><span class="small">Notas del día</span><textarea class="chino-note" rows="3" data-chino-day-note="${chinoDayNoteKey(g.p,g.i)}" placeholder="Anotá algo sobre las compras de este día..." oninput="saveChinoDayNoteLive(this)">${esc(g.note)}</textarea></label>
+ </div>`).join('');
 }
 function saveChinoNoteLive(el){ localStorage.setItem(el.dataset.chinoNote,el.value); }
+function saveChinoDayNoteLive(el){ localStorage.setItem(el.dataset.chinoDayNote,el.value); }
 function editChinoValueLive(el){
  const amount=Math.max(0,Number(el.value)||0);
  localStorage.setItem(el.dataset.chinoValue,String(amount));
@@ -413,6 +424,7 @@ function deletePeriod(id){
    for(const c of [...income,...expenses]) localStorage.removeItem(k(p,c,i));
    localStorage.removeItem(nk(p,i));
    for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
+   localStorage.removeItem(chinoDayNoteKey(p,i));
  }
  state.periods=state.periods.filter(x=>x.id!==id);
  if(state.current===id) state.current=state.periods[state.periods.length-1].id;
