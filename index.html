@@ -152,6 +152,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
    <button class="tab" onclick="panel('analysis')">Análisis</button>
    <button class="tab" onclick="panel('search')">Buscar</button>
    <button class="tab" onclick="panel('deudas')">Deudas</button>
+   <button class="tab" onclick="exportData()">Exportar</button>
    <button class="tab" onclick="toggleDark()">☾</button>
  </nav>
 
@@ -181,9 +182,9 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-casa:#8c7fe0;--pie
 
 <script>
 const income=['diet','extras'];
-const expenses=['comida','transporte','internet','seguro','ocio','prestamos','otros'];
-const names={diet:'Dietética',extras:'Extras',comida:'Comida',transporte:'Transporte',internet:'Internet',seguro:'Seguro',ocio:'Ocio',prestamos:'Préstamos',otros:'Otros'};
-const icons={comida:'🍔',transporte:'▤',internet:'◆',seguro:'◈',ocio:'●',prestamos:'▣',otros:'■'};
+const expenses=['comida','transporte','internet','seguro','medicamentos','ocio','prestamos','otros'];
+const names={diet:'Dietética',extras:'Extras',comida:'Comida',transporte:'Transporte',internet:'Internet',seguro:'Seguro',medicamentos:'Medicamentos',ocio:'Ocio',prestamos:'Préstamos',otros:'Otros'};
+const icons={comida:'🍔',transporte:'▤',internet:'◆',seguro:'◈',medicamentos:'✚',ocio:'●',prestamos:'▣',otros:'■'};
 let state=JSON.parse(localStorage.getItem('fin_state_v3')||'null');
 if(!state) state={nextId:2,current:1,periods:[{id:1,start:'2026-08-11',days:15}]};
 let budgets=JSON.parse(localStorage.getItem('fin_budgets_v5')||'{}');
@@ -488,6 +489,26 @@ function closeModal(){document.getElementById('newModal').classList.remove('show
 function createPeriod(){let s=document.getElementById('newDate').value,n=Math.max(1,Math.min(366,Number(document.getElementById('newLen').value)||15));let p={id:state.nextId++,start:s,days:n};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
 function openPeriod(id){state.current=id;save();showDays();render();window.scrollTo(0,0)}
 function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('fin_theme',document.body.classList.contains('dark')?'dark':'light');}
+function exportData(){
+ const data={
+   app:'Mis Finanzas',
+   version:'v6',
+   exportedAt:new Date().toISOString(),
+   localStorage:{}
+ };
+ for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);
+   if(key && key.startsWith('fin_')) data.localStorage[key]=localStorage.getItem(key);
+ }
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ const d=new Date();
+ const stamp=d.toISOString().slice(0,10);
+ a.href=url; a.download='mis-finanzas-backup-'+stamp+'.json';
+ document.body.appendChild(a); a.click(); a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 // Migración única: las compras marcadas como anotadas pasan a una cuenta independiente y dejan de afectar los gastos del período.
 if(localStorage.getItem('fin_chino_migrated_v2')!=='1'){
  for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){
