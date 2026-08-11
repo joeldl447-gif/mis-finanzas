@@ -100,8 +100,6 @@ textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;
 .small{font-size:12px;color:var(--muted)}
 .search{display:flex;gap:8px}.search input{text-align:left}
 .chino-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
-.chino-check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.chino-check input{width:18px;height:18px}
 .finance-box{display:grid;gap:12px;margin-top:16px}.finance-box .card{padding:16px}.finance-input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px}
 @media(max-width:520px){
  .app{padding:18px 14px 35px}
@@ -215,7 +213,6 @@ function render(){
    localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);
    refreshTotalsOnly();
  }));
- box.querySelectorAll('input[data-chino]').forEach(e=>e.addEventListener('change',()=>{localStorage.setItem(e.target.dataset.chino,e.target.checked?'1':'0');renderChino();}));
  box.querySelectorAll('textarea').forEach((e,i)=>e.addEventListener('input',()=>localStorage.setItem(nk(p,i),e.value)));
  dots();
 }
@@ -242,9 +239,7 @@ function chinoKey(p,c,i){return 'fin_chino_'+p.id+'_'+c+'_'+i}
 function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
 function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
 function row(label,c,i){
- const checked=chinoMarked(current(),c,i)?' checked':'';
- const isExpense=expenses.includes(c);
- return '<div class="row"><span>'+label+(isExpense?'<label class="chino-check"><input type="checkbox" data-chino="'+chinoKey(current(),c,i)+'"'+checked+'> Anotado en chino</label>':'')+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
+ return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
 }
 function dots(){
  const p=current(),d=document.getElementById('dots');d.innerHTML='';
@@ -320,7 +315,7 @@ function renderSummary(){
   '<div style="margin-top:20px"><h3>Gastos por categoría</h3>'+expenses.map(c=>'<div class="category"><div class="cat-icon">'+icons[c]+'</div><div><div class="cat-name">'+names[c]+'</div><div class="cat-sub">'+money(periodCat(p,c))+'</div></div><div class="cat-money">'+Math.round(periodCat(p,c)/(t.g||1)*100)+'%</div></div>').join('')+'</div>';
  document.getElementById('total').innerHTML=el.innerHTML.replace('<h2>Resumen del período</h2>','<h2>Total del período</h2>');
 }
-function card(a,b,c){return '<div class="card"><span>'+a+'</span><b style="color:var(--'+c+')">'+b+'</b></div>'}
+function card(a,b,c){return '<div class="card"><span>'+a+'</span><b class="card-value" style="color:var(--'+c+')">'+b+'</b></div>'}
 function periodCat(p,c){let n=0;for(let i=0;i<p.days;i++)n+=val(p,c,i);return n}
 function renderBudget(){
  const p=current();let totalBudget=Object.values(budgets).reduce((a,b)=>a+Number(b||0),0);
@@ -343,20 +338,65 @@ function renderChino(){
  const pay=Number(localStorage.getItem('fin_chino_pay')||250000);
  const net=Math.max(0,pay-debt);
  document.getElementById('chino').innerHTML='<h2>Cuenta del chino</h2>'+
- '<div class="cards">'+card('Anotado actualmente',money(debt),'red')+card('Cobro quincenal',money(pay),'green')+card('Cobro después del descuento',money(net),'green')+'</div>'+
- '<div class="finance-box"><div class="card"><label><b>Cobro quincenal</b></label><input class="finance-input" type="number" min="0" value="'+pay+'" onchange="saveChinoPay(this.value)"></div>'+
- '<div class="actions"><button class="primary" onclick="cobrarChino()">Registrar cobro y descontar cuenta</button></div>'+ '<p class="small">Cuando cargues un gasto en los días y marques “Anotado en chino”, ese gasto se mantiene en su categoría y además se suma a esta cuenta. Al cobrar, el monto anotado se descuenta del sueldo.</p>'+
+ '<div class="cards">'+card('Anotado actualmente',money(debt),'red')+card('Cobro quincenal',money(pay),'green')+card('Cobro después del descuento',money(net),'green')+'</div>'+ 
+ '<div class="finance-box"><div class="card"><label><b>Cobro quincenal</b></label><input class="finance-input" type="number" min="0" value="'+pay+'" oninput="saveChinoPayLive(this.value)"></div>'+ 
+ '<div class="card"><h3 style="margin-top:0">Agregar compra anotada</h3>'+chinoAddForm()+'</div>'+ 
+ '<div class="actions"><button class="primary" onclick="cobrarChino()">Registrar cobro y descontar cuenta</button></div>'+ 
+ '<p class="small">Las compras anotadas se administran desde acá. No hay casillas en los días: cada compra anotada mantiene su categoría y su importe también queda reflejado en esta cuenta.</p>'+ 
  '<h3>Gastos anotados</h3>'+renderChinoItems()+'</div>';
 }
+function chinoAddForm(){
+ const p=current(); if(!p) return '';
+ let opts='';
+ for(let i=0;i<p.days;i++) opts+='<option value="'+i+'">'+dateText(dateAdd(p.start,i))+'</option>';
+ return '<label>Día<select class="finance-input" id="chinoDay">'+opts+'</select></label>'+ 
+ '<label>Categoría<select class="finance-input" id="chinoCat">'+expenses.map(c=>'<option value="'+c+'">'+names[c]+'</option>').join('')+'</select></label>'+ 
+ '<label>Importe<input class="finance-input" id="chinoAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>'+ 
+ '<button class="primary" style="width:100%;margin-top:8px" onclick="addChinoExpense()">Agregar a la cuenta del chino</button>';
+}
 function renderChinoItems(){
- let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i)){const v=val(p,c,i);if(v>0)a.push('<div class="chino-row"><span>'+dateText(dateAdd(p.start,i))+' · '+names[c]+'</span><input class="finance-input chino-edit" type="number" min="0" step="1" inputmode="numeric" value="'+v+'" data-chino-value="'+k(p,c,i)+'" oninput="editChinoValueLive(this)" onblur="editChinoValueLive(this)"></div>')}
+ let a=[];
+ for(const p of state.periods) for(let i=0;i<p.days;i++) for(const c of expenses) if(chinoMarked(p,c,i)){
+   const v=val(p,c,i);
+   a.push('<div class="chino-row"><div><b>'+dateText(dateAdd(p.start,i))+'</b><div class="small">'+names[c]+'</div></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="'+v+'" data-chino-value="'+k(p,c,i)+'" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense(\''+chinoKey(p,c,i)+'\')">Quitar</button></div></div>');
+ }
  return a.length?a.join(''):'<p class="small">No tenés gastos anotados en el chino.</p>';
 }
-function editChinoValueLive(el){localStorage.setItem(el.dataset.chinoValue,String(Number(el.value)||0)); updateChinoTotals();}
-function updateChinoTotals(){const d=chinoDebt(),pay=Number(localStorage.getItem('fin_chino_pay')||250000),net=Math.max(0,pay-d);const cards=document.querySelectorAll('#chino .cards .card');if(cards.length>=3){cards[0].querySelector('.card-value').textContent=money(d);cards[2].querySelector('.card-value').textContent=money(net);}}
-
-function saveChinoPay(v){localStorage.setItem('fin_chino_pay',String(Number(v)||0));renderChino();}
-function cobrarChino(){for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)localStorage.removeItem(chinoKey(p,c,i));renderChino();}
+function editChinoValueLive(el){
+ const amount=Math.max(0,Number(el.value)||0);
+ localStorage.setItem(el.dataset.chinoValue,String(amount));
+ updateChinoTotals();
+}
+function updateChinoTotals(){
+ const d=chinoDebt(),pay=Number(localStorage.getItem('fin_chino_pay')||250000),net=Math.max(0,pay-d);
+ const cards=document.querySelectorAll('#chino .cards .card');
+ if(cards.length>=3){
+   const vals=[money(d),money(pay),money(net)];
+   cards.forEach((c,i)=>{const b=c.querySelector('b');if(b)b.textContent=vals[i];});
+ }
+}
+function saveChinoPayLive(v){
+ localStorage.setItem('fin_chino_pay',String(Math.max(0,Number(v)||0)));
+ updateChinoTotals();
+}
+function addChinoExpense(){
+ const p=current(); if(!p)return;
+ const i=Number(document.getElementById('chinoDay').value);
+ const c=document.getElementById('chinoCat').value;
+ const amount=Math.max(0,Number(document.getElementById('chinoAmount').value)||0);
+ if(!amount)return;
+ localStorage.setItem(k(p,c,i),String(amount));
+ localStorage.setItem(chinoKey(p,c,i),'1');
+ renderChino();
+}
+function removeChinoExpense(key){
+ localStorage.removeItem(key);
+ renderChino();
+}
+function cobrarChino(){
+ for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)localStorage.removeItem(chinoKey(p,c,i));
+ renderChino();
+}
 function renderHistory(){
  const e=document.getElementById('history');e.innerHTML='<h2>Historial</h2>'+state.periods.slice().reverse().map(p=>{let t=totals(p);return '<div class="history-item"><div><b>'+dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+'</b><div class="small">'+p.days+' días · Gastos '+money(t.g)+' · Saldo '+money(t.b)+'</div></div><button class="secondary" onclick="openPeriod('+p.id+')">Abrir</button></div>'}).join('');
 }
