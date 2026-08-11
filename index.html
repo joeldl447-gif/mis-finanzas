@@ -45,7 +45,7 @@ h1{font-size:29px;line-height:1;margin:0;font-weight:700;letter-spacing:-.7px}
 }
 .tab.active{border-color:#78b94c;color:var(--green);background:#142016}
 .content{position:relative}
-.dayWindow{overflow:hidden;width:100%;touch-action:auto}.day-carousel{display:flex;gap:14px;scrollbar-width:none;touch-action:auto}
+.dayWindow{position:relative;overflow:hidden;width:100%;touch-action:auto}.day-carousel{display:flex;gap:14px;scrollbar-width:none;transition:transform .22s ease;touch-action:auto;will-change:transform}.day-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--text);font-size:25px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);padding:0}.day-arrow.left{left:8px}.day-arrow.right{right:8px}.day-arrow:disabled{opacity:.25}
 .day-carousel::-webkit-scrollbar{display:none}
 .day{
  flex:0 0 100%;scroll-snap-align:start;background:var(--card);
@@ -192,7 +192,7 @@ function render(){
  const p=current();if(!p)return;
  document.getElementById('period').textContent=dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+' · '+p.days+' días';
  const t=totals(p);document.getElementById('heroBalance').textContent=money(t.b);document.getElementById('heroIncome').textContent=money(t.inc);document.getElementById('heroExpense').textContent=money(t.g);
- const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';setupDaySwipe();
+ const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';
  for(let i=0;i<p.days;i++){
   let s=dateAdd(p.start,i),inc=income.reduce((a,c)=>a+val(p,c,i),0),g=expenses.reduce((a,c)=>a+val(p,c,i),0);
   const d=document.createElement('section');d.className='day';
@@ -205,6 +205,15 @@ function render(){
    '<div class="day-balance" data-day-balance="'+i+'">Saldo del día: <b>'+money(inc-g)+'</b></div><div class="pixel-line"></div>';
   box.appendChild(d);
  }
+ const windowEl=box.parentElement;
+ windowEl.querySelectorAll('.day-arrow').forEach(x=>x.remove());
+ const prev=document.createElement('button');prev.className='day-arrow left';prev.type='button';prev.innerHTML='‹';prev.setAttribute('aria-label','Día anterior');
+ const next=document.createElement('button');next.className='day-arrow right';next.type='button';next.innerHTML='›';next.setAttribute('aria-label','Día siguiente');
+ windowEl.appendChild(prev);windowEl.appendChild(next);
+ const updateDayNav=()=>{box.style.transform='translate3d(calc(-'+dayIndex+' * (100% + 14px)),0,0)';prev.disabled=dayIndex===0;next.disabled=dayIndex===p.days-1;document.querySelectorAll('#dots .dot').forEach((d,j)=>d.classList.toggle('active',j===dayIndex));};
+ prev.onclick=()=>{if(dayIndex>0){dayIndex--;updateDayNav()}};
+ next.onclick=()=>{if(dayIndex<p.days-1){dayIndex++;updateDayNav()}};
+ updateDayNav();
  box.querySelectorAll('input[data-key]').forEach(e=>e.addEventListener('input',e=>{
    localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);
    refreshTotalsOnly();
@@ -246,26 +255,7 @@ function dots(){
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-let daySwipeX=0,daySwipeY=0,daySwipeActive=false,dayIndex=0;
-function setupDaySwipe(){
- const box=document.getElementById('days');
- if(!box||box.dataset.swipeReady)return;
- box.dataset.swipeReady='1';
- box.addEventListener('touchstart',e=>{
-   if(e.touches.length!==1)return;
-   daySwipeX=e.touches[0].clientX; daySwipeY=e.touches[0].clientY; daySwipeActive=true;
- },{passive:true});
- box.addEventListener('touchend',e=>{
-   if(!daySwipeActive)return;
-   daySwipeActive=false;
-   const t=e.changedTouches[0],dx=t.clientX-daySwipeX,dy=t.clientY-daySwipeY;
-   if(Math.abs(dx)<55 || Math.abs(dx)<=Math.abs(dy))return;
-   const p=current(); if(!p)return;
-   dayIndex=Math.max(0,Math.min(p.days-1,dayIndex+(dx<0?1:-1)));
-   box.style.transform='translate3d(calc(-'+dayIndex+' * (100% + 14px)),0,0)';
-   document.querySelectorAll('#dots .dot').forEach((d,i)=>d.classList.toggle('active',i===dayIndex));
- },{passive:true});
-}
+function setupDaySwipe(){}
 function showDays(){
  document.getElementById('days').style.display='';
  document.getElementById('dots').style.display='';
@@ -323,10 +313,12 @@ function renderChino(){
  '<div class="finance-box"><div class="card"><label><b>Cobro quincenal</b></label><input class="finance-input" type="number" min="0" value="'+pay+'" onchange="saveChinoPay(this.value)"></div>'+
  '<div class="actions"><button class="primary" onclick="cobrarChino()">Registrar cobro y descontar cuenta</button></div>'+ '<p class="small">Cuando cargues un gasto en los días y marques “Anotado en chino”, ese gasto se mantiene en su categoría y además se suma a esta cuenta. Al cobrar, el monto anotado se descuenta del sueldo.</p>'+
  '<h3>Gastos anotados</h3>'+renderChinoItems()+'</div>';
+ document.querySelectorAll('#chino input[data-chino-edit]').forEach(e=>e.addEventListener('input',()=>{localStorage.setItem(e.dataset.chinoEdit,String(Number(e.value)||0));}));
+ document.querySelectorAll('#chino input[data-chino-edit]').forEach(e=>e.addEventListener('change',()=>{if(Number(e.value)<=0){localStorage.removeItem(e.dataset.chinoEdit);} renderChino();}));
 }
 function renderChinoItems(){
- let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i)){const v=val(p,c,i);if(v>0)a.push('<div class="chino-row"><span>'+dateText(dateAdd(p.start,i))+' · '+names[c]+'</span><b>'+money(v)+'</b></div>')}
- return a.length?a.join(''):'<p class="small">No tenés gastos anotados en el chino.</p>';
+ let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i)){const v=val(p,c,i);if(v>0)a.push('<div class=\"chino-row\"><span>'+dateText(dateAdd(p.start,i))+' · '+names[c]+'</span><input class=\"chino-edit\" type=\"number\" min=\"0\" step=\"1\" value=\"'+v+'\" data-chino-edit=\"'+k(p,c,i)+'\"></div>')}
+ return a.length?a.join(''):'<p class=\"small\">No tenés gastos anotados en el chino.</p>';
 }
 function saveChinoPay(v){localStorage.setItem('fin_chino_pay',String(Number(v)||0));renderChino();}
 function cobrarChino(){for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)localStorage.removeItem(chinoKey(p,c,i));renderChino();}
