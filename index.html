@@ -67,6 +67,7 @@ input:focus,textarea:focus,select:focus{border-color:#6fa945;box-shadow:0 0 0 2p
 .total.green{color:var(--green)} .total.red{color:var(--red)}
 .desc{margin-top:5px}
 .desc input{text-align:left;font-size:14px}
+.expense-note{margin:-2px 0 7px 0;padding-left:0}.expense-note textarea{min-height:52px;font-size:14px;text-align:left}
 .notes{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .notes label{display:block;font-weight:650;margin-bottom:7px}
 textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;color:#e9efeb;border-radius:13px;padding:11px;resize:vertical}
@@ -204,9 +205,9 @@ function render(){
   d.innerHTML='<div class="day-head"><h2>'+cap(dayText(s))+' '+dateText(s)+'</h2><span class="day-count">'+(i+1)+'/'+p.days+'</span></div>'+
    '<div class="section-title in">Ingresos</div>'+income.map(c=>row(names[c],c,i)).join('')+
    '<div class="total green" data-day-income="'+i+'">Total ingresos: '+money(inc)+'</div>'+
-   '<div class="section-title out">Gastos</div>'+expenses.map(c=>row(names[c],c,i)).join('')+
+   '<div class="section-title out">Gastos</div>'+expenses.map(c=>expenseRow(names[c],c,i)).join('')+
    '<div class="total red" data-day-expense="'+i+'">Total gastos: '+money(g)+'</div>'+
-   '<div class="notes"><label>Notas del día</label><textarea id="note'+i+'" placeholder="Anotá algo sobre este día...">'+esc(localStorage.getItem(nk(p,i))||'')+'</textarea></div>'+
+   '<div class="notes"><label>Notas del día</label><textarea id="note'+i+'" data-day-note="'+nk(p,i)+'" placeholder="Anotá algo sobre este día...">'+esc(localStorage.getItem(nk(p,i))||'')+'</textarea></div>'+
    '<div class="day-balance" data-day-balance="'+i+'">Saldo del día: <b>'+money(inc-g)+'</b></div><div class="pixel-line"></div>';
   box.appendChild(d);
  }
@@ -214,7 +215,8 @@ function render(){
    localStorage.setItem(e.target.dataset.key,Number(e.target.value)||0);
    refreshTotalsOnly();
  }));
- box.querySelectorAll('textarea').forEach((e,i)=>e.addEventListener('input',()=>localStorage.setItem(nk(p,i),e.value)));
+ box.querySelectorAll('textarea[data-day-note]').forEach(e=>e.addEventListener('input',()=>localStorage.setItem(e.dataset.dayNote,e.value)));
+ box.querySelectorAll('textarea[data-expense-note]').forEach(e=>e.addEventListener('input',()=>localStorage.setItem(e.dataset.expenseNote,e.value)));
  dots();
 }
 function refreshTotalsOnly(){
@@ -243,6 +245,12 @@ function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
 function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
 function row(label,c,i){
  return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
+}
+function expenseNoteKey(p,c,i){return 'fin_expense_note_'+p.id+'_'+c+'_'+i}
+function expenseRow(label,c,i){
+ const p=current(), note=localStorage.getItem(expenseNoteKey(p,c,i))||'';
+ return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(p,c,i)+'" value="'+val(p,c,i)+'"></div>'+
+ '<div class="expense-note"><textarea rows="2" data-expense-note="'+expenseNoteKey(p,c,i)+'" placeholder="Nota para '+label.toLowerCase()+'...">'+esc(note)+'</textarea></div>';
 }
 function dots(){
  const p=current(),d=document.getElementById('dots');d.innerHTML='';
