@@ -240,9 +240,11 @@ function refreshTotalsOnly(){
 }
 function chinoKey(p,c,i){return 'fin_chino_'+p.id+'_'+c+'_'+i}
 function chinoNoteKey(p,c,i){return 'fin_chino_note_'+p.id+'_'+c+'_'+i}
+function chinoAmountKey(p,c,i){return 'fin_chino_amount_'+p.id+'_'+c+'_'+i}
+function chinoAmount(p,c,i){const z=localStorage.getItem(chinoAmountKey(p,c,i)); return z!==null?Number(z)||0:0}
 function chinoDayNoteKey(p,i){return 'fin_chino_day_note_'+p.id+'_'+i}
 function chinoMarked(p,c,i){return localStorage.getItem(chinoKey(p,c,i))==='1'}
-function chinoDebt(){const p=state.periods.reduce((acc,p)=>{for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))acc+=val(p,c,i);return acc},0);return p}
+function chinoDebt(){let total=0;for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)if(chinoMarked(p,c,i))total+=chinoAmount(p,c,i);return total}
 function row(label,c,i){
  return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(current(),c,i)+'" value="'+val(current(),c,i)+'"></div>';
 }
@@ -371,8 +373,8 @@ function renderChinoItems(){
   for(let i=0;i<p.days;i++){
    const items=[];
    for(const c of expenses) if(chinoMarked(p,c,i)){
-    const v=val(p,c,i);
-    items.push({c,v,key:chinoKey(p,c,i)});
+    const v=chinoAmount(p,c,i);
+    items.push({c,v,key:chinoAmountKey(p,c,i)});
    }
    if(items.length) groups.push({p,i,items,note:localStorage.getItem(chinoDayNoteKey(p,i))||''});
   }
@@ -409,16 +411,18 @@ function addChinoExpense(){
  const c=document.getElementById('chinoCat').value;
  const amount=Math.max(0,Number(document.getElementById('chinoAmount').value)||0);
  if(!amount)return;
- localStorage.setItem(k(p,c,i),String(amount));
+ localStorage.setItem(chinoAmountKey(p,c,i),String(amount));
  localStorage.setItem(chinoKey(p,c,i),'1');
  renderChino();
 }
 function removeChinoExpense(key){
  localStorage.removeItem(key);
+ const parts=key.split('_');
+ if(parts.length>=5){ const pid=Number(parts[3]), c=parts[4], i=Number(parts[5]); localStorage.removeItem(chinoKey({id:pid},c,i)); localStorage.removeItem(chinoNoteKey({id:pid},c,i)); }
  renderChino();
 }
 function cobrarChino(){
- for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses)localStorage.removeItem(chinoKey(p,c,i));
+ for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
  renderChino();
 }
 function renderHistory(){
@@ -431,7 +435,7 @@ function deletePeriod(id){
  for(let i=0;i<p.days;i++){
    for(const c of [...income,...expenses]) localStorage.removeItem(k(p,c,i));
    localStorage.removeItem(nk(p,i));
-   for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
+   for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
    localStorage.removeItem(chinoDayNoteKey(p,i));
  }
  state.periods=state.periods.filter(x=>x.id!==id);
@@ -442,15 +446,36 @@ function renderSearch(){
  document.getElementById('search').innerHTML='<h2>Buscar</h2><div class="search"><input id="q" placeholder="SUBE, cine, supermercado..." oninput="doSearch()"><button class="secondary" onclick="document.getElementById(\'q\').value=\'\';doSearch()">Limpiar</button></div><div id="results"></div>';
 }
 function doSearch(){
- const q=(document.getElementById('q').value||'').toLowerCase(),r=document.getElementById('results');if(!q){r.innerHTML='<p class="small">Buscá descripciones o notas.</p>';return}
- let a=[];for(const p of state.periods)for(let i=0;i<p.days;i++){let n=localStorage.getItem(nk(p,i))||'';if(n.toLowerCase().includes(q))a.push('<div class="category"><div>📝</div><div><b>'+dateText(dateAdd(p.start,i))+'</b><div class="cat-sub">'+esc(n)+'</div></div></div>')}
- r.innerHTML=a.length?a.join(''):'<p class="small">No encontré coincidencias.</p>';
+ const q=(document.getElementById('q').value||'').trim().toLowerCase(),r=document.getElementById('results');
+ if(!q){r.innerHTML='<p class=\"small\">Buscá gastos, descripciones, notas o compras anotadas.</p>';return}
+ let a=[];
+ for(const p of state.periods) for(let i=0;i<p.days;i++){
+   const date=dateText(dateAdd(p.start,i));
+   for(const c of income){ const v=val(p,c,i); if(v>0 && (names[c]||'').toLowerCase().includes(q)) a.push('<div class=\"category\"><div>↗</div><div><b>'+date+'</b><div class=\"cat-sub\">Ingreso · '+esc(names[c])+' · '+money(v)+'</div></div></div>'); }
+   for(const c of expenses){
+     const v=val(p,c,i), note=localStorage.getItem(expenseNoteKey(p,c,i))||'';
+     const desc=localStorage.getItem('fin5_desc_'+p.id+'_'+c+i)||'';
+     if((names[c]||'').toLowerCase().includes(q) || note.toLowerCase().includes(q) || desc.toLowerCase().includes(q)) a.push('<div class=\"category\"><div>↘</div><div><b>'+date+'</b><div class=\"cat-sub\">'+esc(names[c])+' · '+money(v)+(desc?' · '+esc(desc):'')+(note?' · '+esc(note):'')+'</div></div></div>');
+     if(chinoMarked(p,c,i)){ const cv=chinoAmount(p,c,i), cn=localStorage.getItem(chinoDayNoteKey(p,i))||''; if(('chino'.includes(q)||cn.toLowerCase().includes(q))) a.push('<div class=\"category\"><div>📝</div><div><b>'+date+'</b><div class=\"cat-sub\">Compra anotada en chino · '+esc(names[c])+' · '+money(cv)+(cn?' · '+esc(cn):'')+'</div></div></div>'); }
+   }
+   const dn=localStorage.getItem(nk(p,i))||''; if(dn.toLowerCase().includes(q)) a.push('<div class=\"category\"><div>📝</div><div><b>'+date+'</b><div class=\"cat-sub\">Nota del día · '+esc(dn)+'</div></div></div>');
+ }
+ r.innerHTML=a.length?a.join(''):'<p class=\"small\">No encontré coincidencias.</p>';
 }
 function newPeriod(){showDays();document.getElementById('newDate').value=new Date().toISOString().slice(0,10);document.getElementById('newLen').value=15;document.getElementById('newModal').classList.add('show')}
 function closeModal(){document.getElementById('newModal').classList.remove('show')}
 function createPeriod(){let s=document.getElementById('newDate').value,n=Math.max(1,Math.min(366,Number(document.getElementById('newLen').value)||15));let p={id:state.nextId++,start:s,days:n};state.periods.push(p);state.current=p.id;save();closeModal();render();window.scrollTo(0,0)}
 function openPeriod(id){state.current=id;save();showDays();render();window.scrollTo(0,0)}
 function toggleDark(){document.body.classList.toggle('dark');localStorage.setItem('fin_theme',document.body.classList.contains('dark')?'dark':'light');}
+// Migración única: las compras marcadas como anotadas pasan a una cuenta independiente y dejan de afectar los gastos del período.
+if(localStorage.getItem('fin_chino_migrated_v2')!=='1'){
+ for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){
+   if(chinoMarked(p,c,i) && localStorage.getItem(chinoAmountKey(p,c,i))===null){
+     const old=val(p,c,i); if(old>0){localStorage.setItem(chinoAmountKey(p,c,i),String(old));localStorage.setItem(k(p,c,i),'0');}
+   }
+ }
+ localStorage.setItem('fin_chino_migrated_v2','1');
+}
 showDays();
 render();
 
