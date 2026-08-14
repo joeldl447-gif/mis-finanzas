@@ -129,6 +129,15 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
 .deuda-note textarea{width:100%;min-height:90px;resize:vertical;text-align:left}
 .deuda-actions{display:flex;gap:8px;margin-top:10px}
 .deuda-actions button{flex:1}
+
+.chino-item-note{margin-top:9px}
+.chino-item-note textarea{min-height:58px;text-align:left}
+.chino-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.chino-photo{position:relative;width:78px;height:78px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card2)}
+.chino-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.chino-photo button{position:absolute;right:3px;top:3px;width:24px;height:24px;border:0;border-radius:50%;background:#000b;color:#fff;font-size:16px;line-height:20px;padding:0}
+.photo-add{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);font-weight:600}
+.photo-add input{display:none}
 </style>
 </head>
 <body>
@@ -378,27 +387,85 @@ function chinoAddForm(){
  '<label>Importe<input class="finance-input" id="chinoAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>'+ 
  '<button class="primary" style="width:100%;margin-top:8px" onclick="addChinoExpense()">Agregar a la cuenta del chino</button>';
 }
+function chinoPhotosKey(p,c,i){return 'fin_chino_photos_'+p.id+'_'+c+'_'+i}
+function getChinoPhotos(p,c,i){
+  try{return JSON.parse(localStorage.getItem(chinoPhotosKey(p,c,i))||'[]')}catch(e){return []}
+}
+function saveChinoPhotos(p,c,i,arr){localStorage.setItem(chinoPhotosKey(p,c,i),JSON.stringify(arr))}
+
 function renderChinoItems(){
- let groups=[];
- for(const p of state.periods){
-  for(let i=0;i<p.days;i++){
-   const items=[];
-   for(const c of expenses) if(chinoMarked(p,c,i)){
-    const v=chinoAmount(p,c,i);
-    items.push({c,v,key:chinoAmountKey(p,c,i)});
-   }
-   if(items.length) groups.push({p,i,items,note:localStorage.getItem(chinoDayNoteKey(p,i))||''});
+  let groups=[];
+  for(const p of state.periods){
+    for(let i=0;i<p.days;i++){
+      const items=[];
+      for(const c of expenses) if(chinoMarked(p,c,i)){
+        const v=chinoAmount(p,c,i);
+        items.push({c,v,key:chinoAmountKey(p,c,i),noteKey:chinoNoteKey(p,c,i),photos:getChinoPhotos(p,c,i)});
+      }
+      if(items.length) groups.push({p,i,items,note:localStorage.getItem(chinoDayNoteKey(p,i))||''});
+    }
   }
- }
- if(!groups.length) return '<p class="small">No tenés gastos anotados en el chino.</p>';
- return groups.map(g=>`<div class="chino-day-group">
-   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h3 style="margin:0">${cap(dayText(dateAdd(g.p.start,g.i)))} ${dateText(dateAdd(g.p.start,g.i))}</h3><div class="small">${g.items.length} compra${g.items.length===1?'':'s'} anotada${g.items.length===1?'':'s'}</div></div><span class="day-count">${g.i+1}/${g.p.days}</span></div>
-   ${g.items.map(x=>`<div class="chino-row"><div><b>${names[x.c]}</b></div><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="${x.v}" data-chino-value="${x.key}" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense('${x.key}')">Quitar</button></div></div>`).join('')}
-   <label style="display:block;margin-top:12px"><span class="small">Notas del día</span><textarea class="chino-note" rows="3" data-chino-day-note="${chinoDayNoteKey(g.p,g.i)}" placeholder="Anotá algo sobre las compras de este día..." oninput="saveChinoDayNoteLive(this)">${esc(g.note)}</textarea></label>
- </div>`).join('');
+  if(!groups.length) return '<p class="small">No tenés gastos anotados en el chino.</p>';
+  return groups.map(g=>`<div class="chino-day-group">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h3 style="margin:0">${cap(dayText(dateAdd(g.p.start,g.i)))} ${dateText(dateAdd(g.p.start,g.i))}</h3><div class="small">${g.items.length} compra${g.items.length===1?'':'s'} anotada${g.items.length===1?'':'s'}</div></div><span class="day-count">${g.i+1}/${g.p.days}</span></div>
+    ${g.items.map(x=>`<div class="chino-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><b>${names[x.c]}</b><div style="display:flex;align-items:center;gap:8px;min-width:150px"><input class="finance-input chino-edit" style="margin:0" type="number" min="0" step="1" inputmode="numeric" value="${x.v}" data-chino-value="${x.key}" oninput="editChinoValueLive(this)"><button class="secondary danger" style="padding:9px 11px" onclick="removeChinoExpense('${x.key}')">Quitar</button></div></div>
+      <div class="chino-item-note"><textarea rows="2" data-chino-note="${x.noteKey}" placeholder="Nota de esta compra..." oninput="saveChinoNoteLive(this)">${esc(localStorage.getItem(x.noteKey)||'')}</textarea></div>
+      <div class="chino-photos" data-chino-photos="${chinoPhotosKey(g.p,x.c,g.i)}">${x.photos.map((src,j)=>`<div class="chino-photo"><img src="${src}" alt="Foto de la compra"><button type="button" onclick="removeChinoPhoto('${chinoPhotosKey(g.p,x.c,g.i)}',${j})" aria-label="Borrar foto">×</button></div>`).join('')}</div>
+      <label class="photo-add">＋ Agregar foto<input type="file" accept="image/*" multiple onchange="addChinoPhotos(event,'${g.p.id}','${x.c}','${g.i}')"></label>
+    </div>`).join('')}
+    <label style="display:block;margin-top:12px"><span class="small">Notas del día</span><textarea class="chino-note" rows="3" data-chino-day-note="${chinoDayNoteKey(g.p,g.i)}" placeholder="Anotá algo sobre las compras de este día..." oninput="saveChinoDayNoteLive(this)">${esc(g.note)}</textarea></label>
+  </div>`).join('');
 }
 function saveChinoNoteLive(el){ localStorage.setItem(el.dataset.chinoNote,el.value); }
 function saveChinoDayNoteLive(el){ localStorage.setItem(el.dataset.chinoDayNote,el.value); }
+function compressChinoPhoto(file){
+  return new Promise((resolve,reject)=>{
+    if(!file.type.startsWith('image/')){reject(new Error('not-image'));return}
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1000, scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        const w=Math.max(1,Math.round(img.naturalWidth*scale)), h=Math.max(1,Math.round(img.naturalHeight*scale));
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',0.72));
+      };
+      img.onerror=()=>reject(new Error('bad-image'));
+      img.src=reader.result;
+    };
+    reader.onerror=()=>reject(reader.error||new Error('read-error'));
+    reader.readAsDataURL(file);
+  });
+}
+async function addChinoPhotos(event,pid,c,i){
+  const files=[...(event.target.files||[])];
+  event.target.value='';
+  if(!files.length)return;
+  const p=state.periods.find(x=>x.id===Number(pid)); if(!p)return;
+  const photos=getChinoPhotos(p,c,Number(i));
+  try{
+    for(const file of files){
+      if(!file.type.startsWith('image/'))continue;
+      photos.push(await compressChinoPhoto(file));
+    }
+    saveChinoPhotos(p,c,Number(i),photos);
+    renderChino();
+  }catch(e){
+    alert('No se pudo guardar una de las fotos.');
+  }
+}
+function removeChinoPhoto(key,index){
+  try{
+    const photos=JSON.parse(localStorage.getItem(key)||'[]');
+    photos.splice(index,1);
+    if(photos.length)localStorage.setItem(key,JSON.stringify(photos));
+    else localStorage.removeItem(key);
+  }catch(e){}
+  renderChino();
+}
+
 function editChinoValueLive(el){
  const amount=Math.max(0,Number(el.value)||0);
  localStorage.setItem(el.dataset.chinoValue,String(amount));
@@ -429,11 +496,11 @@ function addChinoExpense(){
 function removeChinoExpense(key){
  localStorage.removeItem(key);
  const parts=key.split('_');
- if(parts.length>=5){ const pid=Number(parts[3]), c=parts[4], i=Number(parts[5]); localStorage.removeItem(chinoKey({id:pid},c,i)); localStorage.removeItem(chinoNoteKey({id:pid},c,i)); }
+ if(parts.length>=5){ const pid=Number(parts[3]), c=parts[4], i=Number(parts[5]); localStorage.removeItem(chinoKey({id:pid},c,i)); localStorage.removeItem(chinoNoteKey({id:pid},c,i)); localStorage.removeItem(chinoPhotosKey({id:pid},c,i)); }
  renderChino();
 }
 function cobrarChino(){
- for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
+ for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));localStorage.removeItem(chinoPhotosKey(p,c,i));localStorage.removeItem(chinoPhotosKey(p,c,i));}
  renderChino();
 }
 function renderHistory(){
