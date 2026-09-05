@@ -67,7 +67,7 @@ input:focus,textarea:focus,select:focus{border-color:#6fa945;box-shadow:0 0 0 2p
 .total.green{color:var(--green)} .total.red{color:var(--red)}
 .desc{margin-top:5px}
 .desc input{text-align:left;font-size:14px}
-.expense-note{margin:-2px 0 7px 0;padding-left:0}.expense-note textarea{min-height:52px;font-size:14px;text-align:left}
+.expense-note{margin:-2px 0 7px 0;padding-left:0}.expense-note textarea{min-height:52px;font-size:14px;text-align:left}.expense-movements{margin:2px 0 8px}.expense-movement{display:grid;grid-template-columns:1fr 105px 38px;gap:7px;align-items:start;margin:7px 0}.expense-movement input{font-size:14px}.expense-movement .movement-amount{text-align:right}.expense-movement .movement-detail{text-align:left}.movement-delete{height:42px;padding:0;border-radius:11px}.add-movement{width:100%;padding:9px 11px;margin:2px 0 7px;border:1px dashed var(--line);border-radius:11px;background:transparent;color:var(--green);font-weight:650}.expense-total-live{font-size:12px;color:var(--muted);margin:-2px 0 7px}
 .notes{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .notes label{display:block;font-weight:650;margin-bottom:7px}
 textarea{width:100%;min-height:78px;background:#0b100e;border:1px solid #34403a;color:#e9efeb;border-radius:13px;padding:11px;resize:vertical}
@@ -227,7 +227,29 @@ function dateAdd(s,n){let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);ret
 function dateText(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})}
 function dayText(s){return new Date(s+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long'})}
 function current(){return state.periods.find(p=>p.id===state.current)}
-function val(p,c,i){return Number(localStorage.getItem(k(p,c,i)))||0}
+function movementKey(p,c,i){return 'fin_movements_'+p.id+'_'+c+'_'+i}
+function getMovements(p,c,i){
+  try{
+    const raw=localStorage.getItem(movementKey(p,c,i));
+    if(raw!==null){const a=JSON.parse(raw);return Array.isArray(a)?a.map(x=>({id:String(x.id||Date.now()+Math.random()),amount:Number(x.amount)||0,detail:String(x.detail||''),note:String(x.note||'')})) : []}
+  }catch(e){}
+  return [];
+}
+function saveMovements(p,c,i,a){if(a.length)localStorage.setItem(movementKey(p,c,i),JSON.stringify(a));else localStorage.removeItem(movementKey(p,c,i))}
+function migrateExpenseToMovements(){
+  if(localStorage.getItem('fin_movements_migrated_v1')==='1')return;
+  for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){
+    const amount=Number(localStorage.getItem(k(p,c,i)))||0;
+    if(amount>0){
+      saveMovements(p,c,i,[{id:'legacy',amount,detail:localStorage.getItem(dk(p,c,i))||'',note:localStorage.getItem(expenseNoteKey(p,c,i))||''}]);
+    }
+  }
+  localStorage.setItem('fin_movements_migrated_v1','1');
+}
+function val(p,c,i){
+  if(expenses.includes(c))return getMovements(p,c,i).reduce((s,x)=>s+Number(x.amount||0),0);
+  return Number(localStorage.getItem(k(p,c,i)))||0;
+}
 function totals(p){
  let inc=0,g=0;for(let i=0;i<p.days;i++){income.forEach(c=>inc+=val(p,c,i));expenses.forEach(c=>g+=val(p,c,i))}
  return {inc,g,b:inc-g}
@@ -288,9 +310,37 @@ function row(label,c,i){
 }
 function expenseNoteKey(p,c,i){return 'fin_expense_note_'+p.id+'_'+c+'_'+i}
 function expenseRow(label,c,i){
- const p=current(), note=localStorage.getItem(expenseNoteKey(p,c,i))||'';
- return '<div class="row"><span>'+label+'</span><input type="number" min="0" step="1" inputmode="numeric" data-key="'+k(p,c,i)+'" value="'+val(p,c,i)+'"></div>'+
- '<div class="expense-note"><textarea rows="2" data-expense-note="'+expenseNoteKey(p,c,i)+'" placeholder="Nota para '+label.toLowerCase()+'...">'+esc(note)+'</textarea></div>';
+  const p=current(),moves=getMovements(p,c,i),total=moves.reduce((s,x)=>s+Number(x.amount||0),0);
+  const body=moves.map((m,j)=>`<div class="expense-movement">
+    <input class="text-input movement-detail" type="text" value="${esc(m.detail)}" placeholder="Detalle" data-movement-detail="${movementKey(p,c,i)}" data-movement-index="${j}" oninput="editMovementDetail(this)">
+    <input class="text-input movement-amount" type="number" min="0" step="1" inputmode="numeric" value="${m.amount}" placeholder="$" data-movement-amount="${movementKey(p,c,i)}" data-movement-index="${j}" oninput="editMovementAmount(this)">
+    <button class="secondary danger movement-delete" type="button" onclick="deleteMovement('${p.id}','${c}',${i},${j})">×</button>
+    <textarea rows="2" style="grid-column:1/4" data-movement-note="${movementKey(p,c,i)}" data-movement-index="${j}" placeholder="Anotación..." oninput="editMovementNote(this)">${esc(m.note)}</textarea>
+  </div>`).join('');
+  return '<div class="row"><span>'+label+'</span><div class="expense-total-live" style="grid-column:2">Total: '+money(total)+'</div></div>'+
+    '<div class="expense-movements">'+body+'</div>'+
+    '<button class="add-movement" type="button" onclick="addMovement(\''+p.id+'\',\''+c+'\','+i+')">＋ Agregar gasto de '+label.toLowerCase()+'</button>';
+}
+function addMovement(pid,c,i){
+  const p=state.periods.find(x=>x.id===Number(pid));if(!p)return;
+  const a=getMovements(p,c,i);a.push({id:String(Date.now()+Math.random()),amount:0,detail:'',note:''});saveMovements(p,c,i,a);render();goToDay(i);
+}
+function editMovementAmount(el){
+  const [_,__,pid,c,i]=el.dataset.movementAmount.split('_'),j=Number(el.dataset.movementIndex);
+  const p=state.periods.find(x=>x.id===Number(pid));if(!p)return;const a=getMovements(p,c,Number(i));if(!a[j])return;
+  a[j].amount=Math.max(0,Number(el.value)||0);saveMovements(p,c,Number(i),a);refreshTotalsOnly();
+  const total=val(p,c,Number(i)),container=el.closest('.expense-movements'),head=container?.previousElementSibling?.querySelector('.expense-total-live');if(head)head.textContent='Total: '+money(total);
+}
+function editMovementDetail(el){
+  const [_,__,pid,c,i]=el.dataset.movementDetail.split('_'),j=Number(el.dataset.movementIndex),p=state.periods.find(x=>x.id===Number(pid));if(!p)return;
+  const a=getMovements(p,c,Number(i));if(!a[j])return;a[j].detail=el.value;saveMovements(p,c,Number(i),a);
+}
+function editMovementNote(el){
+  const [_,__,pid,c,i]=el.dataset.movementNote.split('_'),j=Number(el.dataset.movementIndex),p=state.periods.find(x=>x.id===Number(pid));if(!p)return;
+  const a=getMovements(p,c,Number(i));if(!a[j])return;a[j].note=el.value;saveMovements(p,c,Number(i),a);
+}
+function deleteMovement(pid,c,i,j){
+  const p=state.periods.find(x=>x.id===Number(pid));if(!p)return;const a=getMovements(p,c,i);a.splice(j,1);saveMovements(p,c,i,a);render();goToDay(i);
 }
 function dots(){
  const p=current(),d=document.getElementById('dots');d.innerHTML='';
@@ -612,7 +662,8 @@ function doSectionSearch(){
    const category=(names[c]||'').toLowerCase();
    const note=(localStorage.getItem(expenseNoteKey(p,c,i))||'').trim();
    const desc=(localStorage.getItem(dk(p,c,i))||'').trim();
-   const amount=val(p,c,i),categoryHit=categoryMatches.includes(c),textHit=note.toLowerCase().includes(q)||desc.toLowerCase().includes(q);
+   const movementText=getMovements(p,c,i).map(x=>(x.detail||'')+' '+(x.note||'')).join(' ');
+    const amount=val(p,c,i),categoryHit=categoryMatches.includes(c),textHit=note.toLowerCase().includes(q)||desc.toLowerCase().includes(q)||movementText.toLowerCase().includes(q);
    if((categoryHit||textHit)&&(amount>0||note||desc))rows.push({i,date,c,amount,note,desc});
   }
  }
@@ -712,6 +763,7 @@ if(localStorage.getItem('fin_chino_migrated_v2')!=='1'){
  }
  localStorage.setItem('fin_chino_migrated_v2','1');
 }
+migrateExpenseToMovements();
 showDays();
 render();
 
