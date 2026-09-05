@@ -147,7 +147,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
 .chino-photo button{position:absolute;right:3px;top:3px;width:24px;height:24px;border:0;border-radius:50%;background:#000b;color:#fff;font-size:16px;line-height:20px;padding:0}
 .photo-add{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);font-weight:600}
 .photo-add input{display:none}
-.section-search{display:flex;gap:8px;margin-bottom:14px}.section-search input{text-align:left}
+.attendance-grid{overflow-x:auto;margin-top:14px}.attendance-table{width:100%;border-collapse:collapse;min-width:650px}.attendance-table th,.attendance-table td{border-bottom:1px solid var(--line);padding:9px 7px;text-align:center}.attendance-table th{font-size:12px;color:var(--muted);font-weight:650}.attendance-table td:first-child,.attendance-table th:first-child{text-align:left}.attendance-input{width:100%;min-width:82px;text-align:right;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text)}.attendance-total{font-weight:700}.attendance-check{width:22px;height:22px;accent-color:var(--green)}.attendance-note{width:100%;min-width:150px;min-height:40px;text-align:left;padding:8px}.attendance-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}@media(max-width:520px){.attendance-summary{grid-template-columns:1fr 1fr}.attendance-summary .card:last-child{grid-column:1/3}}.section-search{display:flex;gap:8px;margin-bottom:14px}.section-search input{text-align:left}
 .section-result{padding:13px 0;border-top:1px solid var(--line)}
 .section-result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .section-result-note{margin-top:8px;padding:10px 12px;background:var(--card2);border-radius:11px;white-space:pre-wrap;line-height:1.4}
@@ -167,6 +167,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
 
  <nav class="tabs">
    <button class="tab active" onclick="showDays()">Días</button>
+    <button class="tab" onclick="panel('asistencia')">Asistencia chino</button>
    <button class="tab" onclick="panel('calendar')">Calendario</button>
    <button class="tab" onclick="newPeriod()">Nuevo período</button>
    <button class="tab" onclick="panel('summary')">Resumen</button>
@@ -192,6 +193,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
  <div id="dots" class="swipe"></div>
 
  <section id="summary" class="panel"></section>
+  <section id="asistencia" class="panel"></section>
  <section id="total" class="panel"></section>
  <section id="budget" class="panel"></section>
  <section id="chino" class="panel"></section>
@@ -404,6 +406,7 @@ function panel(id){
  const e=document.getElementById(id);e.classList.add('show');
  const tab=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('onclick')==="panel('"+id+"')"); if(tab)tab.classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
+  if(id==='asistencia')renderAsistencia();
  if(id==='budget')renderBudget();
  if(id==='chino')renderChino();
  if(id==='analysis')renderAnalysis();
@@ -588,7 +591,8 @@ function deletePeriod(id){
    for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));}
    localStorage.removeItem(chinoDayNoteKey(p,i));
  }
- state.periods=state.periods.filter(x=>x.id!==id);
+ const asistencia=getAsistencia();delete asistencia[String(id)];saveAsistencia(asistencia);
+  state.periods=state.periods.filter(x=>x.id!==id);
  if(state.current===id) state.current=state.periods[state.periods.length-1].id;
  save(); renderHistory(); render();
 }
@@ -629,6 +633,48 @@ function selectCalendarDay(i){
   goToDay(i);
   showDays();
 }
+
+// Módulo independiente: Asistencia chino. No participa en ningún cálculo financiero.
+const ASIST_KEY='fin_asistencia_chino_v1';
+function getAsistencia(){try{return JSON.parse(localStorage.getItem(ASIST_KEY)||'{}')}catch(e){return {}}}
+function saveAsistencia(a){localStorage.setItem(ASIST_KEY,JSON.stringify(a))}
+function asistenciaDay(p,i){
+  const all=getAsistencia(),pid=String(p.id);
+  if(!all[pid])all[pid]={};
+  if(!all[pid][i])all[pid][i]={morning:'',afternoon:'',noted:false,note:''};
+  return all[pid][i];
+}
+function asistenciaTotalDay(p,i){const x=asistenciaDay(p,i);return (Number(x.morning)||0)+(Number(x.afternoon)||0)}
+function asistenciaTotals(p){
+  let morning=0,afternoon=0,total=0,worked=0,noted=0;
+  for(let i=0;i<p.days;i++){const x=asistenciaDay(p,i),m=Number(x.morning)||0,a=Number(x.afternoon)||0;morning+=m;afternoon+=a;total+=m+a;if(m||a)worked++;if(x.noted)noted++}
+  return {morning,afternoon,total,worked,noted};
+}
+function renderAsistencia(){
+  const p=current(),el=document.getElementById('asistencia');if(!p||!el)return;
+  const t=asistenciaTotals(p);let rows='';
+  for(let i=0;i<p.days;i++){
+    const s=dateAdd(p.start,i),x=asistenciaDay(p,i);
+    rows+=`<tr><td><b>${dateText(s)}</b><div class="small">${cap(dayText(s))}</div></td>
+    <td><input class="attendance-input" type="number" inputmode="numeric" step="1" value="${esc(String(x.morning||''))}" placeholder="0" oninput="setAsistencia('${p.id}',${i},'morning',this.value)"></td>
+    <td><input class="attendance-input" type="number" inputmode="numeric" step="1" value="${esc(String(x.afternoon||''))}" placeholder="0" oninput="setAsistencia('${p.id}',${i},'afternoon',this.value)"></td>
+    <td class="attendance-total">${money(asistenciaTotalDay(p,i))}</td>
+    <td><input class="attendance-check" type="checkbox" ${x.noted?'checked':''} onchange="setAsistencia('${p.id}',${i},'noted',this.checked)"></td>
+    <td><textarea class="attendance-note" rows="1" placeholder="Nota..." oninput="setAsistencia('${p.id}',${i},'note',this.value)">${esc(x.note||'')}</textarea></td></tr>`;
+  }
+  el.innerHTML='<h2>Asistencia chino</h2><p class="small">Registro independiente. No afecta ingresos, gastos, saldo, presupuesto, análisis, Secciones ni Cuenta chino.</p>'+
+  '<div class="attendance-summary">'+card('Mañana',money(t.morning),'green')+card('Tarde',money(t.afternoon),'green')+card('Total',money(t.total),'green')+card('Días registrados',String(t.worked),'yellow')+card('Anotados',String(t.noted),'yellow')+'</div>'+
+  '<div class="attendance-grid"><table class="attendance-table"><thead><tr><th>Fecha</th><th>Mañana</th><th>Tarde</th><th>Total día</th><th>Anotado</th><th>Nota</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><th>TOTAL</th><th>'+money(t.morning)+'</th><th>'+money(t.afternoon)+'</th><th>'+money(t.total)+'</th><th>'+t.noted+'</th><th></th></tr></table></div>';
+}
+function setAsistencia(pid,i,field,value){
+  const all=getAsistencia(),key=String(pid);if(!all[key])all[key]={};if(!all[key][i])all[key][i]={morning:'',afternoon:'',noted:false,note:''};
+  if(field==='morning'||field==='afternoon')all[key][i][field]=value;
+  else if(field==='noted')all[key][i][field]=Boolean(value);
+  else all[key][i][field]=value;
+  saveAsistencia(all);
+  if(field==='morning'||field==='afternoon')renderAsistencia();
+}
+
 const DEUDAS_KEY='fin_deudas_notes_v1';
 function getDeudaNotes(){try{return JSON.parse(localStorage.getItem(DEUDAS_KEY)||'[]')}catch(e){return []}}
 function saveDeudaNotes(a){localStorage.setItem(DEUDAS_KEY,JSON.stringify(a))}
