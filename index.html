@@ -167,6 +167,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
 
  <nav class="tabs">
    <button class="tab active" onclick="showDays()">Días</button>
+   <button class="tab" onclick="panel('calendar')">Calendario</button>
    <button class="tab" onclick="newPeriod()">Nuevo período</button>
    <button class="tab" onclick="panel('summary')">Resumen</button>
    <button class="tab" onclick="panel('history')">Historial</button>
@@ -175,7 +176,6 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
    <button class="tab" onclick="panel('chino')">Cuenta chino</button>
    <button class="tab" onclick="panel('analysis')">Análisis</button>
    <button class="tab" onclick="panel('search')">Buscar</button>
-    <button class="tab" onclick="panel('calendar')">Calendario</button>
    <button class="tab" onclick="panel('secciones')">Secciones</button>
    <button class="tab" onclick="panel('deudas')">Deudas</button>
    <button class="tab" onclick="exportData()">Exportar</button>
@@ -198,6 +198,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
  <section id="analysis" class="panel"></section>
  <section id="history" class="panel"></section>
  <section id="search" class="panel"></section>
+ <section id="calendar" class="panel"></section>
  <section id="secciones" class="panel"></section>
  <section id="deudas" class="panel"></section>
 </div>
@@ -351,15 +352,14 @@ function panel(id){
  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  const e=document.getElementById(id);e.classList.add('show');
- const tabs=[...document.querySelectorAll('.tab')];
- const ids=['summary','history','total','budget','chino','analysis','search','secciones','deudas'];
- const idx=ids.indexOf(id); if(idx>=0 && tabs[idx+2]) tabs[idx+2].classList.add('active');
+ const tab=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('onclick')==="panel('"+id+"')"); if(tab)tab.classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
  if(id==='budget')renderBudget();
  if(id==='chino')renderChino();
  if(id==='analysis')renderAnalysis();
  if(id==='history')renderHistory();
  if(id==='search')renderSearch();
+ if(id==='calendar')renderCalendar();
  if(id==='secciones')renderSections();
  if(id==='deudas')renderDeudas();
 }
@@ -542,26 +542,43 @@ function deletePeriod(id){
  if(state.current===id) state.current=state.periods[state.periods.length-1].id;
  save(); renderHistory(); render();
 }
+let calendarViewMonth=null;
 function renderCalendar(){
   const p=current(),el=document.getElementById('calendar');
-  if(!p)return;
+  if(!p||!el)return;
+  const selectedDate=new Date(dateAdd(p.start,dayIndex)+'T12:00:00');
+  if(!calendarViewMonth)calendarViewMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1,12);
+  renderCalendarMonth(calendarViewMonth);
+}
+function renderCalendarMonth(month){
+  const p=current(),el=document.getElementById('calendar'); if(!p||!el)return;
+  calendarViewMonth=new Date(month.getFullYear(),month.getMonth(),1,12);
   const start=new Date(p.start+'T12:00:00');
-  const end=new Date(dateAdd(p.start,p.days-1)+'T12:00:00');
-  let y=start.getFullYear(),m=start.getMonth();
-  const title=new Date(y,m,1,12).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  const first=(new Date(y,m,1,12).getDay()+6)%7;
-  const dim=new Date(y,m+1,0,12).getDate();
+  const title=calendarViewMonth.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  const first=(calendarViewMonth.getDay()+6)%7;
+  const dim=new Date(calendarViewMonth.getFullYear(),calendarViewMonth.getMonth()+1,0,12).getDate();
   let cells='';
-  for(let n=0;n<first;n++)cells+='<button class="calendar-day empty" tabindex="-1"></button>';
+  for(let n=0;n<first;n++)cells+='<div class="calendar-day empty"></div>';
   for(let d=1;d<=dim;d++){
-    const dt=new Date(y,m,d,12),diff=Math.round((dt-start)/86400000),inside=diff>=0&&diff<p.days;
+    const dt=new Date(calendarViewMonth.getFullYear(),calendarViewMonth.getMonth(),d,12);
+    const diff=Math.round((dt-start)/86400000),inside=diff>=0&&diff<p.days;
     if(!inside){cells+='<button class="calendar-day" disabled>'+d+'</button>';continue}
     const has=income.some(c=>val(p,c,diff)>0)||expenses.some(c=>val(p,c,diff)>0);
     cells+='<button class="calendar-day'+(diff===dayIndex?' selected':'')+(has?' has-data':'')+'" onclick="selectCalendarDay('+diff+')">'+d+'</button>';
   }
-  el.innerHTML='<h2>Calendario</h2><div class="calendar-head"><div class="calendar-title">'+cap(title)+'</div></div><div class="calendar-grid">'+['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(x=>'<div class="calendar-weekday">'+x+'</div>').join('')+cells+'</div><p class="small" style="margin-top:14px">Seleccioná un día para abrirlo directamente.</p>';
+  el.innerHTML='<h2>Calendario</h2>'+
+    '<div class="calendar-head"><button class="secondary" onclick="calendarChangeMonth(-1)">‹</button><div class="calendar-title">'+cap(title)+'</div><button class="secondary" onclick="calendarChangeMonth(1)">›</button></div>'+ 
+    '<div class="calendar-grid">'+['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(x=>'<div class="calendar-weekday">'+x+'</div>').join('')+cells+'</div>'+ 
+    '<p class="small" style="margin-top:14px">Tocá un día para abrirlo directamente.</p>';
 }
-function selectCalendarDay(i){goToDay(i);showDays();}
+function calendarChangeMonth(delta){
+  const m=calendarViewMonth||new Date();
+  renderCalendarMonth(new Date(m.getFullYear(),m.getMonth()+delta,1,12));
+}
+function selectCalendarDay(i){
+  goToDay(i);
+  showDays();
+}
 const DEUDAS_KEY='fin_deudas_notes_v1';
 function getDeudaNotes(){try{return JSON.parse(localStorage.getItem(DEUDAS_KEY)||'[]')}catch(e){return []}}
 function saveDeudaNotes(a){localStorage.setItem(DEUDAS_KEY,JSON.stringify(a))}
