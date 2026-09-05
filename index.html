@@ -225,7 +225,7 @@ function render(){
  const p=current();if(!p)return;
  document.getElementById('period').textContent=dateText(p.start)+' → '+dateText(dateAdd(p.start,p.days-1))+' · '+p.days+' días';
  const t=totals(p);document.getElementById('heroBalance').textContent=money(t.b);document.getElementById('heroIncome').textContent=money(t.inc);document.getElementById('heroExpense').textContent=money(t.g);
- const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';dayIndex=0;box.style.transform='translate3d(0,0,0)';
+ const box=document.getElementById('days');box.className='day-carousel';box.innerHTML='';loadDayPosition();box.style.transform='translate3d(calc(-'+dayIndex+' * 100%),0,0)';
  for(let i=0;i<p.days;i++){
   let s=dateAdd(p.start,i),inc=income.reduce((a,c)=>a+val(p,c,i),0),g=expenses.reduce((a,c)=>a+val(p,c,i),0);
   const d=document.createElement('section');d.className='day';
@@ -288,6 +288,9 @@ function dots(){
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 let daySwipeX=0,daySwipeY=0,daySwipeActive=false,dayIndex=0;
+function dayPositionKey(p){return 'fin_day_position_'+p.id}
+function loadDayPosition(){const p=current();if(!p){dayIndex=0;return}const saved=Number(localStorage.getItem(dayPositionKey(p)));dayIndex=Number.isFinite(saved)?Math.max(0,Math.min(p.days-1,saved)):0}
+function saveDayPosition(){const p=current();if(p)localStorage.setItem(dayPositionKey(p),String(dayIndex))}
 function setupDaySwipe(){
  const box=document.getElementById('days');
  if(!box||box.dataset.swipeReady)return;
