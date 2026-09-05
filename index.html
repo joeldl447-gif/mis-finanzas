@@ -138,6 +138,12 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
 .chino-photo button{position:absolute;right:3px;top:3px;width:24px;height:24px;border:0;border-radius:50%;background:#000b;color:#fff;font-size:16px;line-height:20px;padding:0}
 .photo-add{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--text);font-weight:600}
 .photo-add input{display:none}
+.section-search{display:flex;gap:8px;margin-bottom:14px}.section-search input{text-align:left}
+.section-result{padding:13px 0;border-top:1px solid var(--line)}
+.section-result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.section-result-note{margin-top:8px;padding:10px 12px;background:var(--card2);border-radius:11px;white-space:pre-wrap;line-height:1.4}
+.section-result-note b{display:block;margin-bottom:3px;font-size:12px;color:var(--muted)}
+.section-total{margin-top:14px;padding:12px 14px;background:var(--card2);border:1px solid var(--line);border-radius:12px;display:flex;justify-content:space-between;font-weight:650}
 </style>
 </head>
 <body>
@@ -160,6 +166,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
    <button class="tab" onclick="panel('chino')">Cuenta chino</button>
    <button class="tab" onclick="panel('analysis')">Análisis</button>
    <button class="tab" onclick="panel('search')">Buscar</button>
+   <button class="tab" onclick="panel('secciones')">Secciones</button>
    <button class="tab" onclick="panel('deudas')">Deudas</button>
    <button class="tab" onclick="exportData()">Exportar</button>
    <button class="tab" onclick="document.getElementById('importFile').click()">Importar</button>
@@ -181,6 +188,7 @@ body.dark{--pie-comida:#6fa8ff;--pie-transporte:#62c7c2;--pie-internet:#9a82e8;-
  <section id="analysis" class="panel"></section>
  <section id="history" class="panel"></section>
  <section id="search" class="panel"></section>
+ <section id="secciones" class="panel"></section>
  <section id="deudas" class="panel"></section>
 </div>
 
@@ -331,7 +339,7 @@ function panel(id){
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  const e=document.getElementById(id);e.classList.add('show');
  const tabs=[...document.querySelectorAll('.tab')];
- const ids=['summary','history','total','budget','chino','analysis','search','deudas'];
+ const ids=['summary','history','total','budget','chino','analysis','search','secciones','deudas'];
  const idx=ids.indexOf(id); if(idx>=0 && tabs[idx+2]) tabs[idx+2].classList.add('active');
  if(id==='summary'||id==='total')renderSummary();
  if(id==='budget')renderBudget();
@@ -339,6 +347,7 @@ function panel(id){
  if(id==='analysis')renderAnalysis();
  if(id==='history')renderHistory();
  if(id==='search')renderSearch();
+ if(id==='secciones')renderSections();
  if(id==='deudas')renderDeudas();
 }
 function renderSummary(){
@@ -500,7 +509,7 @@ function removeChinoExpense(key){
  renderChino();
 }
 function cobrarChino(){
- for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));localStorage.removeItem(chinoPhotosKey(p,c,i));localStorage.removeItem(chinoPhotosKey(p,c,i));}
+ for(const p of state.periods)for(let i=0;i<p.days;i++)for(const c of expenses){localStorage.removeItem(chinoKey(p,c,i));localStorage.removeItem(chinoAmountKey(p,c,i));localStorage.removeItem(chinoNoteKey(p,c,i));localStorage.removeItem(chinoPhotosKey(p,c,i));}
  renderChino();
 }
 function renderHistory(){
@@ -532,6 +541,40 @@ function renderDeudas(){
 function addDeudaNote(){const a=getDeudaNotes();a.push('');saveDeudaNotes(a);renderDeudas();setTimeout(()=>{const xs=document.querySelectorAll('#deudas textarea');if(xs.length)xs[xs.length-1].focus()},50)}
 function saveDeudaNote(i,btn){const ta=document.querySelector('#deudas textarea[data-deuda="'+i+'"]');if(!ta)return;const a=getDeudaNotes();a[i]=ta.value;saveDeudaNotes(a);btn.textContent='Guardado';setTimeout(()=>btn.textContent='Guardar',800)}
 function deleteDeudaNote(i){const a=getDeudaNotes();a.splice(i,1);saveDeudaNotes(a);renderDeudas()}
+
+function renderSections(){
+ const el=document.getElementById('secciones'),p=current();
+ el.innerHTML='<h2>Secciones</h2><p class="small">Buscá una categoría para ver todas sus anotaciones del período actual.</p>'+
+  '<div class="section-search"><input id="sectionQ" class="text-input" placeholder="Ej.: préstamos, comida, transporte..." oninput="doSectionSearch()"><button class="secondary" onclick="clearSectionSearch()">Limpiar</button></div>'+
+  '<div id="sectionResults"></div>';
+ doSectionSearch();
+}
+function clearSectionSearch(){const q=document.getElementById('sectionQ');if(q)q.value='';doSectionSearch()}
+function doSectionSearch(){
+ const p=current(),q=(document.getElementById('sectionQ')?.value||'').trim().toLowerCase(),r=document.getElementById('sectionResults');
+ if(!p||!r)return;
+ if(!q){r.innerHTML='<p class="small">Escribí una categoría. Por ejemplo: <b>préstamos</b>.</p>';return}
+ const categoryMatches=expenses.filter(c=>(names[c]||'').toLowerCase().includes(q));
+ const rows=[];
+ for(let i=0;i<p.days;i++){
+  const date=dateText(dateAdd(p.start,i));
+  for(const c of expenses){
+   const category=(names[c]||'').toLowerCase();
+   const note=(localStorage.getItem(expenseNoteKey(p,c,i))||'').trim();
+   const desc=(localStorage.getItem(dk(p,c,i))||'').trim();
+   const amount=val(p,c,i),categoryHit=categoryMatches.includes(c),textHit=note.toLowerCase().includes(q)||desc.toLowerCase().includes(q);
+   if((categoryHit||textHit)&&(amount>0||note||desc))rows.push({i,date,c,amount,note,desc});
+  }
+ }
+ if(!rows.length){r.innerHTML='<p class="small">No encontré anotaciones para esa búsqueda en el período actual.</p>';return}
+ const total=rows.filter(x=>categoryMatches.includes(x.c)).reduce((a,x)=>a+x.amount,0);
+ r.innerHTML='<div class="small" style="margin-bottom:4px">'+rows.length+' anotación'+(rows.length===1?'':'es')+' encontrada'+(rows.length===1?'':'s')+'</div>'+
+  rows.map(x=>'<div class="section-result"><div class="section-result-head"><div><b>'+esc(names[x.c])+'</b><div class="small">'+cap(dayText(dateAdd(p.start,x.i)))+' · '+esc(x.date)+'</div></div><b>'+money(x.amount)+'</b></div>'+
+   (x.desc?'<div class="section-result-note"><b>Descripción</b>'+esc(x.desc)+'</div>':'')+
+   (x.note?'<div class="section-result-note"><b>Anotación</b>'+esc(x.note)+'</div>':'')+
+  '</div>').join('')+
+  (categoryMatches.length?'<div class="section-total"><span>Total de '+esc(categoryMatches.map(c=>names[c]).join(', '))+'</span><span>'+money(total)+'</span></div>':'');
+}
 
 function renderSearch(){
  document.getElementById('search').innerHTML='<h2>Buscar</h2><div class="search"><input id="q" placeholder="SUBE, cine, supermercado..." oninput="doSearch()"><button class="secondary" onclick="document.getElementById(\'q\').value=\'\';doSearch()">Limpiar</button></div><div id="results"></div>';
